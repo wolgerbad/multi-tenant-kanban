@@ -53,6 +53,7 @@ export const card = mysqlTable('card' , {
     created_by: int().notNull().references(() => users.id),
     due_date: timestamp({mode: 'string'}),
     priority: varchar({length: 50}).notNull(),
+    column_id: int().notNull().references(() => column.id),
     org_id: int().notNull().references(() => organization.id)
 })
 

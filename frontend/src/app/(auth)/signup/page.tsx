@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { SignupForm } from "./dynamic";
+import { getSession } from "@/helpers/session";
+import { redirect } from "next/navigation";
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  const session =  await getSession()
+  if(session.ok) redirect('/')
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-10">
