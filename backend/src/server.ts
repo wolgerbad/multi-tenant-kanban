@@ -6,6 +6,8 @@ import cors from "cors"
 import { router as user_router } from "./routes/user.js";
 import { router as organization_router } from "./routes/organization.js";
 import { router as board_router } from "./routes/board.js";
+import { router as column_router } from "./routes/column.js";
+import { router as card_router } from "./routes/card.js";
 
 export const app = express();
 
@@ -16,6 +18,8 @@ app.use('/auth', auth_router)
 app.use('/user', user_router)
 app.use('/organization', organization_router)
 app.use('/board', board_router)
+app.use('/column', column_router)
+app.use('/card', card_router)
 app.use(error_handler)
 
 app.get('/', (req: Request, res: Response) => {

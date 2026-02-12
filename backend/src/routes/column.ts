@@ -1,5 +1,8 @@
 import { Router } from "express";
+import { column_controller } from "../controller/column.controller.js";
 
 export const router = Router()
 
-router.get('/board/:boardId', )
+router.get('/board/:boardId', column_controller.get_columns_by_board_id )
+
+router.post('/create', column_controller.create_column)

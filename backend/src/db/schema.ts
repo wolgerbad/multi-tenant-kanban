@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import { int, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 export const organization = mysqlTable('organization', {
@@ -5,6 +6,14 @@ export const organization = mysqlTable('organization', {
     title: varchar({length: 100}).notNull(),
     image: text(),
 })
+
+export const organization_relations = relations(organization, ({ many }) => ({
+    organization_member: many(organization_member),
+    board: many(board),
+    column: many(column),
+    card: many(card)
+}))
+
 
 export type Organization = typeof organization.$inferSelect;
 
@@ -16,6 +25,11 @@ export const users = mysqlTable('users', {
     image: text(),
 })
 
+export const users_relations = relations(users, ({ many }) => ({
+    organization_member: many(organization_member),
+    card: many(card)
+}))
+
 export type User = typeof users.$inferSelect;
 
 export const organization_member = mysqlTable('organization_member', {
@@ -25,6 +39,17 @@ export const organization_member = mysqlTable('organization_member', {
     role: varchar({length: 50}).notNull().default('member')
 })
 
+export const organization_member_relations = relations(organization_member, ({ one }) => ({
+   users: one(users, {
+    fields: [organization_member.user_id],
+    references: [users.id]
+   }),
+   organization: one(organization, {
+    fields: [organization_member.org_id],
+    references: [organization.id]
+   })
+}))
+
 export type OrganizationMember = typeof organization_member.$inferSelect;
 
 export const board = mysqlTable('board', {
@@ -32,6 +57,14 @@ export const board = mysqlTable('board', {
     title: varchar({length:100}).notNull(), // unq across board
     org_id: int().notNull().references(() => organization.id)
 })
+
+export const board_relations = relations(board, ({one, many}) => ({
+    organization: one(organization, {
+        fields: [board.org_id],
+        references: [organization.id]
+    }),
+    column: many(column)
+}))
 
 export type Board = typeof board.$inferSelect;
 
@@ -42,6 +75,18 @@ export const column = mysqlTable('column', {
     org_id: int().notNull().references(() => organization.id),
     board_id: int().notNull().references(() => board.id)
 })
+
+export const column_relations = relations(column, ({one, many}) => ({
+   organization: one(organization, {
+    fields: [column.org_id],
+    references: [organization.id]
+   }),
+   board: one(board, {
+    fields: [column.board_id],
+    references: [board.id]
+   }),
+   cards: many(card)
+}))
 
 export type Column = typeof column.$inferSelect;
 
@@ -56,5 +101,20 @@ export const card = mysqlTable('card' , {
     column_id: int().notNull().references(() => column.id),
     org_id: int().notNull().references(() => organization.id)
 })
+
+export const card_relations = relations(card, ({ one }) => ({
+    users: one(users, {
+        fields: [card.created_by],
+        references: [users.id]
+    }),
+    column: one(column, {
+        fields: [card.column_id],
+        references: [column.id]
+    }),
+    organization: one(organization, {
+        fields: [card.org_id],
+        references: [organization.id]
+    })
+}))
 
 export type Card = typeof card.$inferSelect;
