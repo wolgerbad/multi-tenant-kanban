@@ -2,9 +2,22 @@
 
 import { create_card } from "@/helpers/card";
 import { create_column } from "@/helpers/column";
-import { Card, ColumnWithCards } from "@/types";
+import { ColumnWithCards } from "@/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react"
+import { TbCalendarDue } from "react-icons/tb";
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { differenceInDays, format } from "date-fns"
+import { ChevronDownIcon } from "lucide-react"
+import { useQuery } from "@tanstack/react-query";
+import { get_user } from "@/helpers/user";
+
 
 type PropTypes = {
     board_id: number;
@@ -52,11 +65,15 @@ export function Columns({columns, board_id, organization_id, user_id}: {columns:
 export function Column({column, user_id}: {column: ColumnWithCards, user_id: number}) {
    const [isOpen, setIsOpen] = useState(false)
    const router = useRouter();
+   const [date, setDate] = useState<Date>();
+
+  const formatted_date = date && format(date, 'yyyy-MM-dd');
 
    async function handle_create_card(formData: FormData) {
        const card_title = formData.get('card_title') as string;
-       if(!card_title.trim().length) return;
-       const cardDTO = {title: card_title, column_id: column.id, org_id: column.org_id, position: 3, created_by: user_id, priority: 'urgent' }
+       const priority = formData.get('priority') as string;
+       if(!card_title.trim().length || !priority || !date) return;
+       const cardDTO = {title: card_title, column_id: column.id, org_id: column.org_id, position: 3, created_by: user_id, priority, due_date: formatted_date }
        const result = await create_card(cardDTO)
        console.log("result", result)
        router.refresh()
@@ -81,7 +98,43 @@ export function Column({column, user_id}: {column: ColumnWithCards, user_id: num
             + Add card
           </button>}
           {isOpen && <form action={handle_create_card} className="w-full text-[11px] text-slate-400">
-            <input type="text" name="card_title" className="w-full px-3 py-2 rounded-lg outline-0 bg-white " />
+            <input type="text" name="card_title" className="w-full mb-1 px-3 py-2 rounded-lg outline-0 bg-white " />
+            <div className="flex items-center gap-4">
+              <select name="priority" className="text-[13px] outline-0">
+                <option value="low">Low priority</option>
+                <option value="normal">Normal priority</option>
+                <option value="urgent">Urgent priority</option>
+              </select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="inline-flex items-center gap-2 whitespace-nowrap rounded-md transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-9 px-4 py-2 has-[>svg]:px-3 text-sm bg-transparent hover:bg-transparent border-0 justify-between text-left font-normal"
+                >
+                  {date ? <span className="flex hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer items-center gap-2">
+                    <TbCalendarDue /> 
+                    {format(date, "MMM dd")}
+                    </span> : <span className="text-2xl hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer">
+                        <TbCalendarDue />
+                      </span>
+                      }
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  disabled={(date) => {
+                    const daysdiff = differenceInDays(date, new Date())
+                    if(daysdiff < 0) return true;
+
+                    return false;
+                  }}
+                  selected={date}
+                  onSelect={setDate}
+                  defaultMonth={date}
+                />
+              </PopoverContent>
+            </Popover>
+            </div>
             <div className="flex justify-end gap-3">
                 <button type="button" className="w-12 py-1 hover:text-slate-300 text-sm" onClick={() => setIsOpen(false)}>cancel</button>
                 <button className="w-12 hover:text-slate-300 text-sm">create</button>
@@ -108,15 +161,39 @@ export function Cards({cards}: {cards: Card[] | null}) {
     }
 
 export function Card({card}: {card: Card}) {
-    return  <div
+  const formatted_date = format(card.due_date, 'MMM dd')
+  const created_by = card.created_by
+
+  const { data: user } = useQuery({
+    queryKey: ['created_by'],
+    queryFn: async() => get_user(created_by)
+  })  
+    return <div
     key={card.id}
     className="group cursor-pointer rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm hover:border-emerald-400/50 hover:bg-slate-900 transition"
     >
-    <div className="font-medium text-slate-100">{card.title}</div>
+    <div className="flex justify-between font-medium text-slate-100">
+      <span>
+        {card.title}
+      </span>
+    <span className="text-[11px] text-slate-400">
+      priority: {card.priority}
+    </span>
+    </div>
     {card.description && (
     <div className="mt-1 text-[11px] text-slate-400">
         {card.description}
     </div>
     )}
+
+    <div className="flex justify-between items-center text-slate-400">
+      <div className="flex gap-2 items-center">
+        <span>
+          <TbCalendarDue />
+        </span>
+        due: {formatted_date} 
+      </div>
+      <div>{user.image ? <img src={user.image} className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full bg-slate-400 text-black flex justify-center items-center text-lg font-semibold">{user.name.slice(0,1)}</div>}</div>
+    </div>
     </div>
     }
