@@ -4,7 +4,6 @@ import Link from "next/link";
 import { get_organizations_of_member } from "@/helpers/organization";
 import { Board, Organization } from "@/types";
 import { get_boards_of_organization } from "@/helpers/board";
-import  OrganizationDropdown  from "./organization_dropdown";
 
 export default async function Page({ params }: {params: Promise<{organization_id: number}>}) {
   const organization_id = Number((await params).organization_id)

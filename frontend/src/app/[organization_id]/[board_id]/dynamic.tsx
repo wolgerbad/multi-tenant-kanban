@@ -17,6 +17,27 @@ import { differenceInDays, format } from "date-fns"
 import { ChevronDownIcon } from "lucide-react"
 import { useQuery } from "@tanstack/react-query";
 import { get_user } from "@/helpers/user";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { IoMdArrowDropdown } from "react-icons/io";
+
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+
 
 
 type PropTypes = {
@@ -164,11 +185,12 @@ export function Card({card}: {card: Card}) {
   const formatted_date = format(card.due_date, 'MMM dd')
   const created_by = card.created_by
 
-  const { data: user } = useQuery({
+  const { data: user, isPending } = useQuery({
     queryKey: ['created_by'],
     queryFn: async() => get_user(created_by)
   })  
-    return <div
+
+  return <div
     key={card.id}
     className="group cursor-pointer rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm hover:border-emerald-400/50 hover:bg-slate-900 transition"
     >
@@ -193,7 +215,45 @@ export function Card({card}: {card: Card}) {
         </span>
         due: {formatted_date} 
       </div>
-      <div>{user.image ? <img src={user.image} className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full bg-slate-400 text-black flex justify-center items-center text-lg font-semibold">{user.name.slice(0,1)}</div>}</div>
+      <div>{isPending ? <p>loading..</p> : user?.image ? <img src={user.image} className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full bg-slate-400 text-black flex justify-center items-center text-lg font-semibold">{user.name.slice(0,1)}</div>}</div>
     </div>
     </div>
-    }
+}
+
+export function MembersDropdown({ organization_members }) {
+  const [isOpen, setIsOpen] = useState<boolean>()
+  return <>
+   <DropdownMenu>
+  <DropdownMenuTrigger asChild>                        
+    <IoMdArrowDropdown />
+  </DropdownMenuTrigger>
+  <DropdownMenuContent className="w-52 mr-4 bg-slate-900 text-slate-400 border border-slate-400">
+    <DropdownMenuGroup className="bg-transparent hover:bg-transparent ">
+      <DropdownMenuLabel>Members</DropdownMenuLabel>
+      {organization_members?.map(member => <DropdownMenuItem className="bg-transparent hover:bg-transparent" key={member.id}>{member.user.name}</DropdownMenuItem>)}
+      <Button onClick={() => setIsOpen(true)} className="text-slate-300 border-t border-slate-400 rounded-none w-full bg-slate-900 hover:bg-slate-800 cursor-pointer">Invite new member</Button>
+     </DropdownMenuGroup>
+  </DropdownMenuContent>
+  </DropdownMenu>
+  <Dialog open={isOpen}  >
+      <form>
+        <DialogContent className="sm:max-w-sm bg-slate-900 text-slate-300 border border-slate-600">
+          <DialogHeader>
+            <DialogTitle>Add people</DialogTitle>
+          </DialogHeader>
+            <div>
+              <label className="block mb-1" htmlFor="name-1">Email address</label>
+              <input id="name-1" type="email" name="email" placeholder="johndoe@gmail.com" className="border border-slate-300 px-2 py-1 w-full outline-slate-300 rounded-sm" />
+            </div>
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button className="bg-transparent text-slate-300 cursor-pointer">Cancel</Button>
+            </DialogClose>
+            <Button type="submit" className="bg-slate-300 hover:bg-slate-400 cursor-pointer text-black font-semibold px-4 py-2 rounded-md">Add</Button>
+          </DialogFooter>
+        </DialogContent>
+      </form>
+    </Dialog>
+  </> 
+}

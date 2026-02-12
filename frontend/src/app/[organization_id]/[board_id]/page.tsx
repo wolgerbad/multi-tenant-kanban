@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { get_columns_by_board_id } from "@/helpers/column";
 import { Card, ColumnWithCards } from "@/types";
-import { Columns, CreateColumn } from "./dynamic";
+import { Columns, CreateColumn, MembersDropdown } from "./dynamic";
+import { get_board_by_id } from "@/helpers/board";
+import { get_members_of_organization } from "@/helpers/organization_member";
+import { IoMdArrowDropdown } from "react-icons/io";
 
 export default async function BoardPage({
   params,
@@ -15,40 +18,13 @@ export default async function BoardPage({
   if (!session.ok) redirect("/landing");
 
   const columns = await get_columns_by_board_id(board_id)
-  console.log("columns", columns)
-  // TODO: Replace with real fetch
-  // const columns = await get_columns_of_board(Number(board_id));
-  // const cards = await get_cards_of_board(Number(board_id));
+  const board = await get_board_by_id(board_id)
 
-  // Mock data structure - replace with your API call
-  // const columns = [
-  //   {
-  //     id: 1,
-  //     title: "Todo",
-  //     position: 0,
-  //     cards: [
-  //       { id: 1, title: "Design onboarding", description: "Update empty state", position: 0 },
-  //       { id: 2, title: "Set up backend", description: "Columns and cards API", position: 1 },
-  //     ],
-  //   },
-  //   {
-  //     id: 2,
-  //     title: "In Progress",
-  //     position: 1,
-  //     cards: [
-  //       { id: 3, title: "Keyboard shortcuts", description: "Move cards with keys", position: 0 },
-  //     ],
-  //   },
-  //   {
-  //     id: 3,
-  //     title: "Done",
-  //     position: 2,
-  //     cards: [
-  //       { id: 4, title: "Dark UI pass", description: "Shadows and contrast", position: 0 },
-  //     ],
-  //   },
-  // ];
+  const isUserAllowed = board.org_id === +organization_id 
+  
+ const organization_members = await get_members_of_organization(+organization_id)
 
+  console.log("org members", organization_members)
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="flex min-h-screen flex-col">
@@ -65,16 +41,29 @@ export default async function BoardPage({
               <div className="h-4 w-px bg-slate-700" />
               <h1 className="text-sm font-semibold text-slate-100">
                 {/* TODO: Replace with board.title from API */}
-                Sprint Board
+                {board.title}
               </h1>
+            </div>
+            <div className="flex items-center gap-1">
+                <span className="text-slate-400">members:</span>
+              {organization_members.slice(0, 3)?.map(member => <div key={member.id}>{member.user.image ? <img src={member.user.image} className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-400 text-black text-xl font-semibold">{member.user.name.slice(0,1)}</div>}</div>)}
+               <div className="text-2xl cursor-pointer text-slate-400 hover:text-slate-500">
+                  <MembersDropdown organization_members={organization_members} />
+               </div>                
             </div>
           </div>
         </header>
 
         {/* Board content - horizontal scroll */}
-        <div className="flex-1 overflow-x-auto">
+        {isUserAllowed && <div className="flex-1 overflow-x-auto">
             <Columns columns={columns} organization_id={organization_id} board_id={board_id} user_id={session.data.id} />
-        </div>
+        </div>}
+        {
+          !isUserAllowed && <div className=" mt-8 flex flex-col gap-2 items-center">
+          <h1 className="text-xl font-semibold tracking-tight">Board not found.</h1>
+          <p className="text-lg text-center text-slate-400">This board may be private. If someone gave you this link, they may need to share the board with you or invite you to their Workspace.</p>
+           </div>
+        }
       </div>
     </main>
   );
