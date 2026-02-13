@@ -12,4 +12,15 @@ async function get_boards_of_organization(req: Request, res: Response, next: Nex
     }
 }
 
-export const board_controller = { get_boards_of_organization }
+async function get_board_by_id(req: Request, res: Response, next: NextFunction) {
+    const boardId = Number(req.params.boardId)
+    try {
+       const result = await board_service.get_board_by_id(boardId)
+        if(!result.ok) throw new Error(result.message)
+        res.json(result.data)
+    } catch (error: any) {
+        res.status(500).json({ error: error.message })
+    }
+}
+
+export const board_controller = { get_boards_of_organization, get_board_by_id }

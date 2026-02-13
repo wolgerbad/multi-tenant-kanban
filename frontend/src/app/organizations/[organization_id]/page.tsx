@@ -70,7 +70,7 @@ export default async function Page({ params }: {params: Promise<{organization_id
               {boards?.map((board: Board) => (
                 <Link
                   key={board.id}
-                  href={`/${organization_id}/${board.id}`}
+                  href={`/organizations/${organization_id}/${board.id}`}
                   className="group rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm hover:border-emerald-400/70 hover:bg-slate-900 transition"
                 >
                   {/* <div className="mb-1 text-[11px] uppercase tracking-[0.14em] text-slate-500 group-hover:text-emerald-300/90">

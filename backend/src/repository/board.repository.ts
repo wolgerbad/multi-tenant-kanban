@@ -10,4 +10,8 @@ async function get_boards_of_organization(orgId: number) {
     return await db.select().from(board).where(eq(board.org_id, orgId))
 }
 
-export const board_repository = { create_board, get_boards_of_organization }
+async function get_board_by_id(boardId: number) {
+    return await db.select().from(board).where(eq(board.id, boardId))
+}
+
+export const board_repository = { create_board, get_boards_of_organization, get_board_by_id }

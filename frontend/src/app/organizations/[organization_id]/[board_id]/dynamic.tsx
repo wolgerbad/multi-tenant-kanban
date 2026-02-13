@@ -2,7 +2,7 @@
 
 import { create_card } from "@/helpers/card";
 import { create_column } from "@/helpers/column";
-import { ColumnWithCards } from "@/types";
+import { ColumnWithCards, OrgMemberForDropdown, User } from "@/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react"
 import { TbCalendarDue } from "react-icons/tb";
@@ -14,7 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { differenceInDays, format } from "date-fns"
-import { ChevronDownIcon } from "lucide-react"
+import { ChevronDownIcon, CreditCardIcon, LogOutIcon, SettingsIcon, UserIcon } from "lucide-react"
 import { useQuery } from "@tanstack/react-query";
 import { get_user } from "@/helpers/user";
 import {
@@ -23,6 +23,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { IoMdArrowDropdown } from "react-icons/io";
@@ -37,6 +38,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { send_organization_invite } from "@/helpers/organization_invite";
+import { FaUser } from "react-icons/fa";
+import { FcInvite } from "react-icons/fc";
+import Link from "next/link";
 
 
 
@@ -190,6 +195,8 @@ export function Card({card}: {card: Card}) {
     queryFn: async() => get_user(created_by)
   })  
 
+  console.log("user", user)
+
   return <div
     key={card.id}
     className="group cursor-pointer rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm hover:border-emerald-400/50 hover:bg-slate-900 transition"
@@ -215,13 +222,22 @@ export function Card({card}: {card: Card}) {
         </span>
         due: {formatted_date} 
       </div>
-      <div>{isPending ? <p>loading..</p> : user?.image ? <img src={user.image} className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full bg-slate-400 text-black flex justify-center items-center text-lg font-semibold">{user.name.slice(0,1)}</div>}</div>
+      <div>{isPending ? <p>loading..</p> : user?.image ? <img src={user.image} className="w-6 h-6 rounded-full" /> : <div className="w-6 h-6 rounded-full bg-slate-400 text-black flex justify-center items-center text-lg font-semibold">{user.name.slice(0,1)}</div>}</div>
     </div>
     </div>
 }
 
-export function MembersDropdown({ organization_members }) {
+export function MembersDropdown({ organization_members, organization_id, sender_id }: {organization_members: OrgMemberForDropdown[]; organization_id: number; sender_id: number }) {
   const [isOpen, setIsOpen] = useState<boolean>()
+  const [error, setError] = useState()
+
+  async function handle_send_invite(formData: FormData) {
+    const email = formData.get('email') as string;
+    const inviteDTO = { email, org_id: organization_id, sender_id}
+    const result = await send_organization_invite(inviteDTO)
+    if(!result.ok) return setError(result.error)
+    setIsOpen(false)
+  }
   return <>
    <DropdownMenu>
   <DropdownMenuTrigger asChild>                        
@@ -236,24 +252,53 @@ export function MembersDropdown({ organization_members }) {
   </DropdownMenuContent>
   </DropdownMenu>
   <Dialog open={isOpen}  >
-      <form>
         <DialogContent className="sm:max-w-sm bg-slate-900 text-slate-300 border border-slate-600">
+       <form action={handle_send_invite} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>Add people</DialogTitle>
           </DialogHeader>
             <div>
               <label className="block mb-1" htmlFor="name-1">Email address</label>
-              <input id="name-1" type="email" name="email" placeholder="johndoe@gmail.com" className="border border-slate-300 px-2 py-1 w-full outline-slate-300 rounded-sm" />
+              <input id="name-1" type="email" name="email" placeholder="johndoe@gmail.com" className="mb-1 border border-slate-300 px-2 py-1 w-full outline-slate-300 rounded-sm" />
+              {error && <p className="text-red-600 text-sm font-semibold">{error}</p>}
             </div>
-          
           <DialogFooter>
             <DialogClose asChild>
               <Button className="bg-transparent text-slate-300 cursor-pointer">Cancel</Button>
             </DialogClose>
             <Button type="submit" className="bg-slate-300 hover:bg-slate-400 cursor-pointer text-black font-semibold px-4 py-2 rounded-md">Add</Button>
           </DialogFooter>
+       </form>
         </DialogContent>
-      </form>
     </Dialog>
   </> 
+}
+
+export function ProfileDropdown({user}: {user: User}) {
+  return <DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <button>
+      {user.image ? <img src={user.image} className="cursor-pointer w-8 h-8 rounded-full" /> : <div className="cursor-pointer w-8 text-center rounded-full flex items-center justify-center text-xl font-semibold bg-slate-400">{user.name.slice(0,1)}</div>}
+    </button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent className="bg-slate-900 text-slate-400">
+    <DropdownMenuItem>
+      <Link href='/profile' className="flex gap-2 items-center">
+        <UserIcon />
+        Profile
+      </Link>
+    </DropdownMenuItem>
+    <DropdownMenuItem>
+      <Link href='/account/invites' className="flex gap-2 items-center">
+        <FcInvite />
+        Invites
+      </Link>
+    </DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem variant="destructive">
+      <LogOutIcon />
+      Log out
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
 }

@@ -1,3 +1,10 @@
+export type User = {
+    id: number; 
+    name: string;
+    email: string;
+    image: string | null
+}
+
 export type Organization = {
     id: number;
     title: string;
@@ -9,6 +16,13 @@ export type OrganizationMember = {
     user_id: number;
     org_id: number;
     role: string;
+}
+
+export type OrgMemberForDropdown = {
+    id: number;
+    org_id: number; 
+    role: number; 
+    user: User;
 }
 
 export type Board = {

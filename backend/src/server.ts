@@ -8,6 +8,8 @@ import { router as organization_router } from "./routes/organization.js";
 import { router as board_router } from "./routes/board.js";
 import { router as column_router } from "./routes/column.js";
 import { router as card_router } from "./routes/card.js";
+import { router as organization_member_router } from "./routes/organization_member.js";
+import { router as organization_invite_router } from "./routes/organization_invite.js";
 
 export const app = express();
 
@@ -20,6 +22,8 @@ app.use('/organization', organization_router)
 app.use('/board', board_router)
 app.use('/column', column_router)
 app.use('/card', card_router)
+app.use('/organization-member', organization_member_router)
+app.use('/organization-invite', organization_invite_router)
 app.use(error_handler)
 
 app.get('/', (req: Request, res: Response) => {

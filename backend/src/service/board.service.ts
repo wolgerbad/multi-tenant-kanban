@@ -7,4 +7,10 @@ async function get_boards_of_organization(orgId: number) {
    return {ok: true, data: result}
 }
 
-export const board_service = { get_boards_of_organization }
+async function get_board_by_id(boardId: number) {
+  const [result] = await board_repository.get_board_by_id(boardId)
+  if(!result) return {ok: false, message: 'No board found with the given id'}
+  return {ok: true, data: result}
+}
+
+export const board_service = { get_boards_of_organization, get_board_by_id }

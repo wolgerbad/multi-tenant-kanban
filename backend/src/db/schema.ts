@@ -5,15 +5,16 @@ export const organization = mysqlTable('organization', {
     id: int().primaryKey().notNull().autoincrement(),
     title: varchar({length: 100}).notNull(),
     image: text(),
+    created_at: timestamp({mode: 'string'}).defaultNow()
 })
 
 export const organization_relations = relations(organization, ({ many }) => ({
     organization_member: many(organization_member),
     board: many(board),
     column: many(column),
-    card: many(card)
+    card: many(card),
+    organization_invite: many(organization_invite)
 }))
-
 
 export type Organization = typeof organization.$inferSelect;
 
@@ -23,11 +24,13 @@ export const users = mysqlTable('users', {
     email: varchar({length: 150}).notNull().unique(),
     password: text().notNull(),
     image: text(),
+    created_at: timestamp({mode: 'string'}).defaultNow()
 })
 
 export const users_relations = relations(users, ({ many }) => ({
     organization_member: many(organization_member),
-    card: many(card)
+    card: many(card),
+    organization_invite: many(organization_invite)
 }))
 
 export type User = typeof users.$inferSelect;
@@ -36,7 +39,8 @@ export const organization_member = mysqlTable('organization_member', {
     id: int().primaryKey().notNull().autoincrement(),
     user_id: int().notNull().references(() => users.id),
     org_id: int().notNull().references(() => organization.id),
-    role: varchar({length: 50}).notNull().default('member')
+    role: varchar({length: 50}).notNull().default('member'),
+    created_at: timestamp({mode: 'string'}).defaultNow()
 })
 
 export const organization_member_relations = relations(organization_member, ({ one }) => ({
@@ -55,7 +59,8 @@ export type OrganizationMember = typeof organization_member.$inferSelect;
 export const board = mysqlTable('board', {
     id: int().primaryKey().notNull().autoincrement(),
     title: varchar({length:100}).notNull(), // unq across board
-    org_id: int().notNull().references(() => organization.id)
+    org_id: int().notNull().references(() => organization.id),
+    created_at: timestamp({mode: 'string'}).defaultNow()
 })
 
 export const board_relations = relations(board, ({one, many}) => ({
@@ -73,7 +78,8 @@ export const column = mysqlTable('column', {
     title: varchar({length: 100}).notNull(),
     position: int().notNull(),
     org_id: int().notNull().references(() => organization.id),
-    board_id: int().notNull().references(() => board.id)
+    board_id: int().notNull().references(() => board.id),
+    created_at: timestamp({mode: 'string'}).defaultNow()
 })
 
 export const column_relations = relations(column, ({one, many}) => ({
@@ -99,7 +105,8 @@ export const card = mysqlTable('card' , {
     due_date: timestamp({mode: 'string'}),
     priority: varchar({length: 50}).notNull(),
     column_id: int().notNull().references(() => column.id),
-    org_id: int().notNull().references(() => organization.id)
+    org_id: int().notNull().references(() => organization.id),
+    created_at: timestamp({mode: 'string'}).defaultNow()
 })
 
 export const card_relations = relations(card, ({ one }) => ({
@@ -118,3 +125,28 @@ export const card_relations = relations(card, ({ one }) => ({
 }))
 
 export type Card = typeof card.$inferSelect;
+
+export const organization_invite = mysqlTable('organization_invite', {
+    id: int().primaryKey().notNull().autoincrement(),
+    sender_id: int().notNull().references(() => users.id),
+    org_id: int().notNull().references(() => organization.id),
+    receiver_id: int().notNull().references(() => users.id),
+    created_at: timestamp({mode: 'string'}).defaultNow()
+})
+
+export type OrganizationInvite = typeof organization_invite.$inferSelect
+
+export const organization_invite_relations = relations(organization_invite, ({one}) => ({
+    sender: one(users, {
+        fields: [organization_invite.sender_id],
+        references: [users.id],
+    }),
+    org_id: one(organization, ({
+        fields: [organization_invite.org_id],
+        references: [organization.id]
+    })),
+    receiver: one(users, {
+        fields: [organization_invite.receiver_id],
+        references: [users.id],
+    }),
+}))

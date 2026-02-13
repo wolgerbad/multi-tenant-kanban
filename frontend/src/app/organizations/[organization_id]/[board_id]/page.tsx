@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { get_columns_by_board_id } from "@/helpers/column";
 import { Card, ColumnWithCards } from "@/types";
-import { Columns, CreateColumn, MembersDropdown } from "./dynamic";
+import { Columns, CreateColumn, MembersDropdown, ProfileDropdown } from "./dynamic";
 import { get_board_by_id } from "@/helpers/board";
 import { get_members_of_organization } from "@/helpers/organization_member";
 import { IoMdArrowDropdown } from "react-icons/io";
@@ -16,6 +16,7 @@ export default async function BoardPage({
   const { organization_id, board_id } = await params;
   const session = await getSession();
   if (!session.ok) redirect("/landing");
+console.log("session", session)
 
   const columns = await get_columns_by_board_id(board_id)
   const board = await get_board_by_id(board_id)
@@ -43,13 +44,16 @@ export default async function BoardPage({
                 {/* TODO: Replace with board.title from API */}
                 {board.title}
               </h1>
-            </div>
-            <div className="flex items-center gap-1">
+              <div className="ml-4 flex items-center gap-1">
                 <span className="text-slate-400">members:</span>
-              {organization_members.slice(0, 3)?.map(member => <div key={member.id}>{member.user.image ? <img src={member.user.image} className="w-6 h-6" /> : <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-400 text-black text-xl font-semibold">{member.user.name.slice(0,1)}</div>}</div>)}
+              {organization_members.slice(0, 3)?.map(member => <div key={member.id}>{member.user.image ? <img src={member.user.image} className="w-6 h-6 rounded-full" /> : <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-400 text-black text-xl font-semibold">{member.user.name.slice(0,1)}</div>}</div>)}
                <div className="text-2xl cursor-pointer text-slate-400 hover:text-slate-500">
-                  <MembersDropdown organization_members={organization_members} />
+                  <MembersDropdown organization_members={organization_members} organization_id={organization_id} sender_id={session.data?.id} />
                </div>                
+            </div>
+            </div>
+            <div>
+              <ProfileDropdown user={session?.data} />
             </div>
           </div>
         </header>

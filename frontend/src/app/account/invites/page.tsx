@@ -1,0 +1,170 @@
+import { get_organization_invites_of_member } from "@/helpers/organization_invite";
+import { getSession } from "@/helpers/session";
+import { redirect } from "next/navigation";
+
+type Invite = {
+  id: number;
+  organization: {
+    name: string;
+    image?: string | null;
+  };
+  sender: {
+    name: string;
+    email: string;
+    image?: string | null;
+  };
+  role: string;
+  createdAt: string;
+  status?: "pending" | "accepted" | "declined";
+};
+
+// Temporary mock data – replace with real data fetching later
+const MOCK_INVITES: Invite[] = [
+  {
+    id: 1,
+    organization: {
+      name: "Flowboard Studio",
+    },
+    sender: {
+      name: "Alex Kim",
+      email: "alex@flowboard.studio",
+    },
+    role: "Member",
+    createdAt: "2026-02-10T12:00:00.000Z",
+    status: "pending",
+  },
+  {
+    id: 2,
+    organization: {
+      name: "Design Ops",
+    },
+    sender: {
+      name: "Taylor Doe",
+      email: "taylor@designops.io",
+    },
+    role: "Viewer",
+    createdAt: "2026-02-08T15:30:00.000Z",
+    status: "pending",
+  },
+];
+
+function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export default async function Page() {
+  const invites = MOCK_INVITES; // later: replace with data from backend
+  const session = await getSession()
+  if(!session.ok) redirect('/login')
+
+    const invts = await get_organization_invites_of_member(session.data.id)
+
+  const hasInvites = invites.length > 0;
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-slate-50">
+      <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-6 py-10">
+        {/* Header */}
+        <header className="mb-8 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
+              Invites
+            </h1>
+            <p className="mt-1 text-sm text-slate-400">
+              See the workspaces you&apos;ve been invited to and choose where you
+              want to join.
+            </p>
+          </div>
+        </header>
+
+        {/* Content */}
+        {!hasInvites ? (
+          <div className="mt-10 flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 px-6 py-12 text-center">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-slate-800/70 text-slate-300">
+              ✉️
+            </div>
+            <h2 className="text-base font-medium text-slate-100">
+              No invites yet
+            </h2>
+            <p className="mt-1 max-w-sm text-sm text-slate-400">
+              When someone invites you to their organization, it will show up
+              here. You can accept or decline with a single click.
+            </p>
+          </div>
+        ) : (
+          <section className="space-y-4">
+            {invites.map((invite) => (
+              <article
+                key={invite.id}
+                className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 shadow-[0_12px_40px_rgba(15,23,42,0.8)] md:flex-row md:items-center md:justify-between"
+              >
+                <div className="flex flex-1 items-start gap-3">
+                  {/* Org avatar */}
+                  <div className="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-semibold text-emerald-300">
+                    {invite.organization.name.slice(0, 2).toUpperCase()}
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium text-slate-50">
+                        {invite.organization.name}
+                      </p>
+                      <span className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[11px] font-medium text-emerald-300">
+                        Invite to {invite.role}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      Invited by{" "}
+                      <span className="font-medium text-slate-200">
+                        {invite.sender.name}
+                      </span>{" "}
+                      · {invite.sender.email}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Sent on {formatDate(invite.createdAt)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 md:justify-end">
+                  {invite.status === "pending" && (
+                    <>
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-4 py-1.5 text-xs font-semibold text-slate-950 shadow-sm shadow-emerald-500/40 hover:bg-emerald-300 transition"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-full border border-slate-600 px-4 py-1.5 text-xs font-medium text-slate-200 hover:border-slate-400 hover:text-slate-50 transition"
+                      >
+                        Decline
+                      </button>
+                    </>
+                  )}
+                  {invite.status === "accepted" && (
+                    <span className="inline-flex items-center rounded-full border border-emerald-500/50 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-300">
+                      Joined
+                    </span>
+                  )}
+                  {invite.status === "declined" && (
+                    <span className="inline-flex items-center rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[11px] font-medium text-slate-400">
+                      Declined
+                    </span>
+                  )}
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
+      </div>
+    </main>
+  );
+}
