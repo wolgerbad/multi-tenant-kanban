@@ -1,15 +1,16 @@
-import Link from "next/link";
-import { SignupForm } from "./dynamic";
-import { getSession } from "@/helpers/session";
-import { redirect } from "next/navigation";
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { getSession } from '@/helpers/session'
+import { SignupForm } from './dynamic'
 
 export default async function SignupPage() {
-  const session =  await getSession()
-  if(session.ok) redirect('/')
+  const session = await getSession()
+  if (session.ok)
+    redirect('/')
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-10">
-        <Link href='/' className="mb-10 flex items-center gap-2">
+        <Link href="/" className="mb-10 flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 ring-1 ring-emerald-500/40">
             <span className="text-sm font-semibold text-emerald-300">KB</span>
           </div>
@@ -26,10 +27,11 @@ export default async function SignupPage() {
             Set up a minimal workspace for your next product push.
           </p>
 
-        <SignupForm />
+          <SignupForm />
 
           <p className="mt-4 text-[11px] text-slate-400">
-            Already using Flowboard?{" "}
+            Already using Flowboard?
+            {' '}
             <Link
               href="/login"
               className="text-emerald-300 hover:text-emerald-200"
@@ -44,5 +46,5 @@ export default async function SignupPage() {
         </p>
       </div>
     </main>
-  );
+  )
 }

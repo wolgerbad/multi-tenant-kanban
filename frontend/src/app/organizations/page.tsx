@@ -1,19 +1,19 @@
-import { getSession } from "@/helpers/session";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { get_organizations_of_member } from "@/helpers/organization";
-import { Board, Organization } from "@/types";
-import { get_boards_of_organization } from "@/helpers/board";
+import type { Organization } from '@/types'
+import { redirect } from 'next/navigation'
+import { get_boards_of_organization } from '@/helpers/board'
+import { get_organizations_of_member } from '@/helpers/organization'
+import { getSession } from '@/helpers/session'
 
-export default async function Page({ params }: {params: Promise<{organization_id: number}>}) {
+export default async function Page({ params }: { params: Promise<{ organization_id: number }> }) {
   const organization_id = Number((await params).organization_id)
-  const session = await getSession();
-  if (!session.ok) redirect("/landing");
+  const session = await getSession()
+  if (!session.ok)
+    redirect('/landing')
 
   const organizations = await get_organizations_of_member(session.data.id)
-  const boards = await get_boards_of_organization(organization_id) 
+  const boards = await get_boards_of_organization(organization_id)
 
-  console.log("boards", boards)
+  console.log('boards', boards)
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
@@ -47,7 +47,7 @@ export default async function Page({ params }: {params: Promise<{organization_id
           <h1 className="text-xl font-semibold tracking-tight">Welcome to FlowBoard.</h1>
           <p className="text-lg text-center text-slate-400">Select an organization on top to continue</p>
         </div>
-            </div>
+      </div>
     </main>
-  );
+  )
 }

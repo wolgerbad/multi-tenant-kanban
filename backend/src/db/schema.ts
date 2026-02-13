@@ -131,7 +131,9 @@ export const organization_invite = mysqlTable('organization_invite', {
     sender_id: int().notNull().references(() => users.id),
     org_id: int().notNull().references(() => organization.id),
     receiver_id: int().notNull().references(() => users.id),
-    created_at: timestamp({mode: 'string'}).defaultNow()
+    created_at: timestamp({mode: 'string'}).defaultNow(),
+    status: varchar('status', { length: 20 }).notNull().default('pending'),
+    role: varchar('role', { length: 20 }).notNull()
 })
 
 export type OrganizationInvite = typeof organization_invite.$inferSelect

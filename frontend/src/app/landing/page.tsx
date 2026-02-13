@@ -1,10 +1,10 @@
-import Navbar from "@/components/navbar";
-import { getSession } from "@/helpers/session";
-import Link from "next/link";
+import Link from 'next/link'
+import Navbar from '@/components/navbar'
+import { getSession } from '@/helpers/session'
 
 export default async function Home() {
-  const session =  await getSession()
-  console.log("session", session)
+  const session = await getSession()
+  console.log('session', session)
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-10">
@@ -28,7 +28,7 @@ export default async function Home() {
               dashboards.
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <Link href='/signup' className="rounded-full bg-emerald-400 px-5 py-2 text-xs md:text-sm font-semibold text-slate-950 shadow-sm shadow-emerald-500/40 hover:bg-emerald-300 transition">
+              <Link href="/signup" className="rounded-full bg-emerald-400 px-5 py-2 text-xs md:text-sm font-semibold text-slate-950 shadow-sm shadow-emerald-500/40 hover:bg-emerald-300 transition">
                 Get started – it’s free
               </Link>
               <button className="rounded-full border border-slate-600 px-4 py-2 text-xs md:text-sm text-slate-100 hover:border-slate-400 hover:text-white transition">
@@ -101,7 +101,12 @@ export default async function Home() {
 
         {/* Small footer / social proof */}
         <footer className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800/80 pt-4 text-[11px] text-slate-500">
-          <span>© {new Date().getFullYear()} Flowboard, Inc.</span>
+          <span>
+            ©
+            {new Date().getFullYear()}
+            {' '}
+            Flowboard, Inc.
+          </span>
           <span className="text-slate-400/90">
             Trusted by small product teams who care about what ships, not how
             busy their board looks.
@@ -109,5 +114,5 @@ export default async function Home() {
         </footer>
       </div>
     </main>
-  );
+  )
 }

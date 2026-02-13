@@ -1,5 +1,6 @@
-"use client"
+'use client'
 
+import Link from 'next/link'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import Link from "next/link"
+} from '@/components/ui/dropdown-menu'
 
 export default function DropdownMenuBasic() {
   return (
@@ -20,7 +20,7 @@ export default function DropdownMenuBasic() {
       <DropdownMenuContent>
         <DropdownMenuGroup>
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
-          <Link href='/'>hi</Link>
+          <Link href="/">hi</Link>
           <DropdownMenuItem>Billing</DropdownMenuItem>
           <DropdownMenuItem>Settings</DropdownMenuItem>
         </DropdownMenuGroup>

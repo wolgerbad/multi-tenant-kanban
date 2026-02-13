@@ -1,31 +1,30 @@
-import { getSession } from "@/helpers/session";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { get_columns_by_board_id } from "@/helpers/column";
-import { Card, ColumnWithCards } from "@/types";
-import { Columns, CreateColumn, MembersDropdown, ProfileDropdown } from "./dynamic";
-import { get_board_by_id } from "@/helpers/board";
-import { get_members_of_organization } from "@/helpers/organization_member";
-import { IoMdArrowDropdown } from "react-icons/io";
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { get_board_by_id } from '@/helpers/board'
+import { get_columns_by_board_id } from '@/helpers/column'
+import { get_members_of_organization } from '@/helpers/organization_member'
+import { getSession } from '@/helpers/session'
+import { Columns, MembersDropdown, ProfileDropdown } from './dynamic'
 
 export default async function BoardPage({
   params,
 }: {
-  params: Promise<{ organization_id: number; board_id: number }>;
+  params: Promise<{ organization_id: number, board_id: number }>
 }) {
-  const { organization_id, board_id } = await params;
-  const session = await getSession();
-  if (!session.ok) redirect("/landing");
-console.log("session", session)
+  const { organization_id, board_id } = await params
+  const session = await getSession()
+  if (!session.ok)
+    redirect('/landing')
+  console.log('session', session)
 
   const columns = await get_columns_by_board_id(board_id)
   const board = await get_board_by_id(board_id)
 
-  const isUserAllowed = board.org_id === +organization_id 
-  
- const organization_members = await get_members_of_organization(+organization_id)
+  const isUserAllowed = board.org_id === +organization_id
 
-  console.log("org members", organization_members)
+  const organization_members = await get_members_of_organization(+organization_id)
+
+  console.log('org members', organization_members)
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="flex min-h-screen flex-col">
@@ -46,11 +45,11 @@ console.log("session", session)
               </h1>
               <div className="ml-4 flex items-center gap-1">
                 <span className="text-slate-400">members:</span>
-              {organization_members.slice(0, 3)?.map(member => <div key={member.id}>{member.user.image ? <img src={member.user.image} className="w-6 h-6 rounded-full" /> : <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-400 text-black text-xl font-semibold">{member.user.name.slice(0,1)}</div>}</div>)}
-               <div className="text-2xl cursor-pointer text-slate-400 hover:text-slate-500">
+                {organization_members.slice(0, 3)?.map(member => <div key={member.id}>{member.user.image ? <img src={member.user.image} className="w-6 h-6 rounded-full" /> : <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-400 text-black text-xl font-semibold">{member.user.name.slice(0, 1)}</div>}</div>)}
+                <div className="text-2xl cursor-pointer text-slate-400 hover:text-slate-500">
                   <MembersDropdown organization_members={organization_members} organization_id={organization_id} sender_id={session.data?.id} />
-               </div>                
-            </div>
+                </div>
+              </div>
             </div>
             <div>
               <ProfileDropdown user={session?.data} />
@@ -59,16 +58,20 @@ console.log("session", session)
         </header>
 
         {/* Board content - horizontal scroll */}
-        {isUserAllowed && <div className="flex-1 overflow-x-auto">
+        {isUserAllowed && (
+          <div className="flex-1 overflow-x-auto">
             <Columns columns={columns} organization_id={organization_id} board_id={board_id} user_id={session.data.id} />
-        </div>}
+          </div>
+        )}
         {
-          !isUserAllowed && <div className=" mt-8 flex flex-col gap-2 items-center">
-          <h1 className="text-xl font-semibold tracking-tight">Board not found.</h1>
-          <p className="text-lg text-center text-slate-400">This board may be private. If someone gave you this link, they may need to share the board with you or invite you to their Workspace.</p>
-           </div>
+          !isUserAllowed && (
+            <div className=" mt-8 flex flex-col gap-2 items-center">
+              <h1 className="text-xl font-semibold tracking-tight">Board not found.</h1>
+              <p className="text-lg text-center text-slate-400">This board may be private. If someone gave you this link, they may need to share the board with you or invite you to their Workspace.</p>
+            </div>
+          )
         }
       </div>
     </main>
-  );
+  )
 }
