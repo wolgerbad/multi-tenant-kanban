@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { organization, organization_invite, OrganizationInvite, users } from "../db/schema.js";
 import { alias } from "drizzle-orm/mysql-core";
@@ -20,5 +20,9 @@ async function answer_organization_invite(status: string, invite_id: number) {
     return org
 }
 
-export const organization_invite_repository = { send_organization_invite, get_organization_invites_of_member, answer_organization_invite }
+async function get_organization_invite(user_id: number, org_id: number) {
+  return await db.select().from(organization_invite).where(and(eq(organization_invite.org_id, org_id), eq(organization_invite.receiver_id, user_id)))
+}
+
+export const organization_invite_repository = { send_organization_invite, get_organization_invites_of_member, answer_organization_invite, get_organization_invite }
  

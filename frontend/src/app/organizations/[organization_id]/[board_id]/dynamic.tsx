@@ -1,6 +1,6 @@
 'use client'
 
-import type { ColumnWithCards, OrgMemberForDropdown, User } from '@/types'
+import type { Card, ColumnWithCards, Invite, OrgMemberForDropdown, User } from '@/types'
 import { useQuery } from '@tanstack/react-query'
 import { differenceInDays, format } from 'date-fns'
 import { LogOutIcon, UserIcon } from 'lucide-react'
@@ -36,16 +36,22 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { create_card } from '@/helpers/card'
-import { create_column } from '@/helpers/column'
-import { send_organization_invite } from '@/helpers/organization_invite'
+import { create_column, switch_column_positions } from '@/helpers/column'
+import { get_organization_invites_of_member, send_organization_invite } from '@/helpers/organization_invite'
 import { get_user } from '@/helpers/user'
+import { toast } from 'sonner'
+
+import { DndContext, DragEndEvent, useDraggable, useDroppable } from "@dnd-kit/core"
+import { CSS } from "@dnd-kit/utilities"
+
 
 interface PropTypes {
   board_id: number
   organization_id: number
+  position: number
 }
 
-export function CreateColumn({ board_id, organization_id }: PropTypes) {
+export function CreateColumn({ board_id, organization_id, position }: PropTypes) {
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
 
@@ -53,7 +59,7 @@ export function CreateColumn({ board_id, organization_id }: PropTypes) {
     const column_name = formData.get('column_name') as string
     if (!column_name.trim().length)
       return
-    await create_column({ title: column_name, board_id, org_id: organization_id, position: 3 })
+    await create_column({ title: column_name, board_id, org_id: organization_id, position })
     router.refresh()
   }
 
@@ -80,13 +86,28 @@ export function CreateColumn({ board_id, organization_id }: PropTypes) {
 }
 
 export function Columns({ columns, board_id, organization_id, user_id}: { columns: ColumnWithCards[], board_id: number, organization_id: number, user_id: number }) {
+  const last_position = columns?.length ? columns.at(-1)?.position : -1; 
+  const router = useRouter()
+
+  async function handle_drag_end(event: DragEndEvent) {
+    const {active, over} = event;
+    if(!over || over.id === active.id) return
+
+    const drag_id = active.id as number;
+    const drop_id = over.id as number;
+
+    await switch_column_positions({dragged_column: drag_id, dropped_column: drop_id })
+    router.refresh()
+  }
   return (
     <div className="flex gap-4 p-6">
-      {columns?.length && columns.map((column: ColumnWithCards) => (
-        <Column key={column.id} column={column} user_id={user_id} />
-      ))}
+      <DndContext onDragEnd={handle_drag_end}>
+        {columns?.length && columns.map((column: ColumnWithCards) => (
+          <Column key={column.id} column={column} user_id={user_id} />
+        ))}
+      </DndContext>
       <div>
-        <CreateColumn board_id={board_id} organization_id={organization_id} />
+        <CreateColumn board_id={board_id} organization_id={organization_id} position={last_position + 1} />
       </div>
     </div>
   )
@@ -96,34 +117,49 @@ export function Column({ column, user_id}: { column: ColumnWithCards, user_id: n
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
   const [date, setDate] = useState<Date>()
+  const last_position = column.cards.at(-1)?.position ?? -1
 
   const formatted_date = date && format(date, 'yyyy-MM-dd')
+
+  const {attributes, listeners, setNodeRef: draggableNodeRef, transform} = useDraggable({
+    id: column.id,
+  });
+ const {isOver, setNodeRef: droppableNodeRef} = useDroppable({id: column.id})
+
+  const draggable_style = {
+    // Outputs `translate3d(x, y, 0)`
+    transform: CSS.Translate.toString(transform),
+  };
+  const droppable_style = {
+    opacity: !isOver ? 1 : 0.5
+  }
 
   async function handle_create_card(formData: FormData) {
     const card_title = formData.get('card_title') as string
     const priority = formData.get('priority') as string
     if (!card_title.trim().length || !priority || !date)
       return
-    const cardDTO = { title: card_title, column_id: column.id, org_id: column.org_id, position: 3, created_by: user_id, priority, due_date: formatted_date }
+    const cardDTO = { title: card_title, column_id: column.id, org_id: column.org_id, position: last_position + 1, created_by: user_id, priority, due_date: formatted_date }
     const result = await create_card(cardDTO)
     console.log('result', result)
     router.refresh()
   }
   return (
     <div
+    ref={droppableNodeRef}
       key={column.id}
+      style={droppable_style}
       className="flex h-full min-w-[280px] flex-col rounded-xl border border-slate-800 bg-slate-900/40"
     >
-      {/* Column header */}
-      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-        <h2 className="text-sm font-semibold text-slate-200">{column.title}</h2>
-        <span className="text-[11px] text-slate-500">
-          {column.cards?.length}
-          {' '}
-          {column.cards?.length === 1 ? 'card' : 'cards'}
-        </span>
-      </div>
-
+      {/* Column header Draggable */}
+        <div ref={draggableNodeRef} {...listeners} {...attributes} style={draggable_style} className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-200">{column.title}</h2>
+          <span className="text-[11px] text-slate-500">
+            {column.cards?.length}
+            {' '}
+            {column.cards?.length === 1 ? 'card' : 'cards'}
+          </span>
+        </div>
       {/* Cards container */}
       <Cards cards={column.cards} />
       {/* Add card button */}
@@ -198,9 +234,9 @@ export function Cards({ cards}: { cards: Card[] | null }) {
               Drop cards here
             </div>
           )
-        : (
+        : ( 
             cards.map((card: Card) => (
-              <Card card={card} key={card.id} />
+                <Card card={card} key={card.id} />
             ))
           )}
     </div>
@@ -211,16 +247,27 @@ export function Card({ card}: { card: Card }) {
   const formatted_date = format(card.due_date, 'MMM dd')
   const created_by = card.created_by
 
+  const {attributes, listeners, setNodeRef: setDraggableNodeRef, transform} = useDraggable({
+    id: card.id,
+  });
+
+  const style = {
+    // Outputs `translate3d(x, y, 0)`
+    transform: CSS.Translate.toString(transform),
+  };
+
   const { data: user, isPending } = useQuery({
     queryKey: ['created_by'],
     queryFn: async () => get_user(created_by),
   })
 
-  console.log('user', user)
-
   return (
     <div
       key={card.id}
+      ref={setDraggableNodeRef}
+      {...attributes}
+      {...listeners}
+      style={style}
       className="group cursor-pointer rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm hover:border-emerald-400/50 hover:bg-slate-900 transition"
     >
       <div className="flex justify-between font-medium text-slate-100">
@@ -258,6 +305,9 @@ export function MembersDropdown({ organization_members, organization_id, sender_
   const [isOpen, setIsOpen] = useState<boolean>()
   const [error, setError] = useState()
 
+  const authenticated_member = organization_members?.find(member => member.user.id === sender_id)
+  const can_send_invite = authenticated_member?.role === 'admin' ? true : authenticated_member?.role === 'owner' ? true : false; 
+
   async function handle_send_invite(formData: FormData) {
     const email = formData.get('email') as string
     const role = formData.get('role') as string
@@ -267,7 +317,8 @@ export function MembersDropdown({ organization_members, organization_id, sender_
     if (!result.ok)
       return setError(result.error)
     setIsOpen(false)
-  }
+    toast('Invite has been sent.')
+ }
   return (
     <>
       <DropdownMenu>
@@ -284,7 +335,13 @@ export function MembersDropdown({ organization_members, organization_id, sender_
       </DropdownMenu>
       <Dialog open={isOpen}>
         <DialogContent className="sm:max-w-sm bg-slate-900 text-slate-300 border border-slate-600">
-          <form action={handle_send_invite} className="flex flex-col gap-4">
+         {!can_send_invite && <div>
+         <h3>
+           Only admins and owners are allowed to invite new users.
+         </h3>
+         <p>your role: {authenticated_member?.role}</p>
+          </div>}
+         {can_send_invite && <form action={handle_send_invite} className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle>Add people</DialogTitle>
             </DialogHeader>
@@ -300,18 +357,25 @@ export function MembersDropdown({ organization_members, organization_id, sender_
             </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button className="bg-transparent text-slate-300 cursor-pointer">Cancel</Button>
+                <Button className="bg-transparent text-slate-300 cursor-pointer" onClick={() => setIsOpen(false)}>Cancel</Button>
               </DialogClose>
               <Button type="submit" className="bg-slate-300 hover:bg-slate-400 cursor-pointer text-black font-semibold px-4 py-2 rounded-md">Add</Button>
             </DialogFooter>
-          </form>
+          </form>}
         </DialogContent>
       </Dialog>
     </>
   )
 }
 
-export function ProfileDropdown({ user}: { user: User }) {
+export function ProfileDropdown({ user }: { user: User }) {
+ const {data: invites, isPending} = useQuery({
+    queryKey: ['organization_invites', user.id],
+    queryFn: async () => get_organization_invites_of_member(user.id)
+  })
+
+const pending_invites = invites?.filter((invite: Invite)  => invite.status === 'pending') 
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -329,7 +393,8 @@ export function ProfileDropdown({ user}: { user: User }) {
         <DropdownMenuItem>
           <Link href="/account/invites" className="flex gap-2 items-center">
             <FcInvite />
-            Invites
+           <span> Invites </span>
+            {pending_invites?.length > 0 && <span className='border border-slate-400 rounded-full px-2'>{pending_invites?.length}</span>}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -341,3 +406,4 @@ export function ProfileDropdown({ user}: { user: User }) {
     </DropdownMenu>
   )
 }
+

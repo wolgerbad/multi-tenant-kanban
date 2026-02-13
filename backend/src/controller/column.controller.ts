@@ -23,4 +23,14 @@ async function create_column(req: Request, res: Response, next: NextFunction) {
   
 }
 
-export const column_controller = { get_columns_by_board_id, create_column }
+async function switch_column_positions(req: Request, res: Response, next: NextFunction) {
+  const columns = { ...req.body }
+  try {
+    await column_service.switch_column_positions(columns)
+    res.json({ok: true})
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })    
+  }
+}
+
+export const column_controller = { get_columns_by_board_id, create_column, switch_column_positions }

@@ -13,4 +13,10 @@ async function create_column(columnDTO: Column) {
   return await column_repository.create_column(columnDTO)
 }
 
-export const column_service = { get_columns_by_board_id, create_column }
+async function switch_column_positions(columns: { dragged_column: number; dropped_column: number }) {
+  const [dragged_column] = await column_repository.get_column(columns.dragged_column)
+  const [dropped_column] = await column_repository.get_column(columns.dropped_column)
+  return await column_repository.switch_column_positions({dragged_column, dropped_column})
+}
+
+export const column_service = { get_columns_by_board_id, create_column, switch_column_positions }

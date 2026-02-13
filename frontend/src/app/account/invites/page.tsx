@@ -3,61 +3,8 @@ import { redirect } from 'next/navigation'
 import { get_organization_invites_of_member } from '@/helpers/organization_invite'
 import { getSession } from '@/helpers/session'
 import { AcceptForm, DeclineForm } from './dynamic'
+import { Invite, Organization, User } from '@/types'
 
-interface Invite {
-  id: number
-  organization: {
-    name: string
-    image?: string | null
-  }
-  sender: {
-    name: string
-    email: string
-    image?: string | null
-  }
-  role: string
-  createdAt: string
-  status?: 'pending' | 'accepted' | 'declined'
-}
-
-// Temporary mock data – replace with real data fetching later
-const MOCK_INVITES: Invite[] = [
-  {
-    id: 1,
-    organization: {
-      name: 'Flowboard Studio',
-    },
-    sender: {
-      name: 'Alex Kim',
-      email: 'alex@flowboard.studio',
-    },
-    role: 'Member',
-    createdAt: '2026-02-10T12:00:00.000Z',
-    status: 'pending',
-  },
-  {
-    id: 2,
-    organization: {
-      name: 'Design Ops',
-    },
-    sender: {
-      name: 'Taylor Doe',
-      email: 'taylor@designops.io',
-    },
-    role: 'Viewer',
-    createdAt: '2026-02-08T15:30:00.000Z',
-    status: 'pending',
-  },
-]
-
-function formatDate(dateString: string) {
-  const date = new Date(dateString)
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
 
 export default async function Page() {
 //   const invites = MOCK_INVITES; // later: replace with data from backend
@@ -100,7 +47,7 @@ export default async function Page() {
           </div>
         ) : (
           <section className="space-y-4">
-            {invites.map(invite => (
+            {invites.map((invite: Invite) => (
               <article
                 key={invite.id}
                 className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 shadow-[0_12px_40px_rgba(15,23,42,0.8)] md:flex-row md:items-center md:justify-between"
@@ -117,7 +64,7 @@ export default async function Page() {
                         {invite.organization.title}
                       </p>
                       <span className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[11px] font-medium text-emerald-300">
-                        Invite to
+                        Invited as
                         {' '}
                         {invite.role}
                       </span>
@@ -151,7 +98,7 @@ export default async function Page() {
                   )}
                   {invite.status === 'accepted' && (
                     <span className="inline-flex items-center rounded-full border border-emerald-500/50 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-300">
-                      Joined
+                      Accepted
                     </span>
                   )}
                   {invite.status === 'declined' && (
