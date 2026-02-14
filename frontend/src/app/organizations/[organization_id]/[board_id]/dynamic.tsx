@@ -41,7 +41,7 @@ import { get_organization_invites_of_member, send_organization_invite } from '@/
 import { get_user } from '@/helpers/user'
 import { toast } from 'sonner'
 
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable, useDroppable } from "@dnd-kit/core"
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import { horizontalListSortingStrategy, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
@@ -91,6 +91,14 @@ export function Columns({ columns, board_id, organization_id, user_id}: { column
   const router = useRouter()
   const active_column = columns.find(column => `column-${column.id}` === activeId)
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5  
+      }
+    })
+  )
 
   async function handle_drag_end(event: DragEndEvent) {
     const {active, over} = event;
@@ -137,7 +145,7 @@ export function Columns({ columns, board_id, organization_id, user_id}: { column
 
   return (
     <div className="flex gap-4 p-6 overflow-hidden">
-      <DndContext onDragStart={handle_drag_start} onDragEnd={handle_drag_end}>
+      <DndContext onDragStart={handle_drag_start} onDragEnd={handle_drag_end} sensors={sensors}>
         <SortableContext items={columns?.map(column => `column-${column.id}`)} strategy={horizontalListSortingStrategy}>
           {columns?.length && columns.map((column: ColumnWithCards) => (
             <Column key={column.id} column={column} user_id={user_id} active_id={activeId} />
