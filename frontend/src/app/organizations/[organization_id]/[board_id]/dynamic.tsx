@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { FcInvite } from 'react-icons/fc'
 import { IoMdArrowDropdown } from 'react-icons/io'
-import { TbCalendarDue } from 'react-icons/tb'
+import { TbCalendarDue, TbOvalVerticalFilled } from 'react-icons/tb'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -35,15 +35,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { create_card } from '@/helpers/card'
+import { create_card, switch_card_column, switch_card_positions } from '@/helpers/card'
 import { create_column, switch_column_positions } from '@/helpers/column'
 import { get_organization_invites_of_member, send_organization_invite } from '@/helpers/organization_invite'
 import { get_user } from '@/helpers/user'
 import { toast } from 'sonner'
 
-import { DndContext, DragEndEvent, useDraggable, useDroppable } from "@dnd-kit/core"
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable, useDroppable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
-
+import { horizontalListSortingStrategy, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
 interface PropTypes {
   board_id: number
@@ -87,24 +87,65 @@ export function CreateColumn({ board_id, organization_id, position }: PropTypes)
 
 export function Columns({ columns, board_id, organization_id, user_id}: { columns: ColumnWithCards[], board_id: number, organization_id: number, user_id: number }) {
   const last_position = columns?.length ? columns.at(-1)?.position : -1; 
+  const [activeId, setActiveId] = useState<string | null>(null)
   const router = useRouter()
+  const active_column = columns.find(column => `column-${column.id}` === activeId)
+
 
   async function handle_drag_end(event: DragEndEvent) {
     const {active, over} = event;
-    if(!over || over.id === active.id) return
+    setActiveId(null)
+    console.log(active, over)
+    if(!over) return
 
-    const drag_id = active.id as number;
-    const drop_id = over.id as number;
 
-    await switch_column_positions({dragged_column: drag_id, dropped_column: drop_id })
-    router.refresh()
+    const drag_id = +active.id.split('-')[1];
+    const drop_id = +over.id.split('-')[1];
+    
+    if(active.data.current?.type === 'column' && over.data.current?.type === 'column') {
+      if(drag_id === drop_id) return;
+      await switch_column_positions({dragged_column: drag_id, dropped_column: drop_id })
+      router.refresh()
+    }
+    if(active.data.current?.type === 'column' && over.data.current?.type === 'card') {
+      if(drag_id === over.data.current.column_id) return;
+      await switch_column_positions({dragged_column: drag_id, dropped_column: over.data.current.column_id })
+      router.refresh()
+    }
+
+    if(active.data.current?.type === 'card' && over.data.current?.type === 'card') {
+      if(active.data.current?.column_id === over.data.current?.column_id) {
+       if(drag_id === drop_id) return;
+       console.log('switch_card_positions_same_column_running', drag_id, drop_id)
+       const result = await switch_card_positions({dragged_card: drag_id, dropped_card: drop_id})
+       console.log("result", result)
+        router.refresh()
+      } else if(active.data.current?.column_id !== over.data.current?.column_id) {
+        await switch_card_column({ card_id: drag_id, column_id: over.data.current.column_id })
+        router.refresh()
+      }
+    } else if(active.data.current?.type === 'card' && over.data.current?.type === 'column') {
+      await switch_card_column({ card_id: drag_id, column_id: drop_id })
+      router.refresh()
+    }
+    return
   }
+
+  function handle_drag_start(event: DragStartEvent) {
+    setActiveId(event.active.id)
+  }
+
   return (
-    <div className="flex gap-4 p-6">
-      <DndContext onDragEnd={handle_drag_end}>
-        {columns?.length && columns.map((column: ColumnWithCards) => (
-          <Column key={column.id} column={column} user_id={user_id} />
-        ))}
+    <div className="flex gap-4 p-6 overflow-hidden">
+      <DndContext onDragStart={handle_drag_start} onDragEnd={handle_drag_end}>
+        <SortableContext items={columns?.map(column => `column-${column.id}`)} strategy={horizontalListSortingStrategy}>
+          {columns?.length && columns.map((column: ColumnWithCards) => (
+            <Column key={column.id} column={column} user_id={user_id} active_id={activeId} />
+          ))}
+          {activeId && <DragOverlay>
+                {(activeId && active_column) ? <Column column={active_column} user_id={user_id} active_id={activeId} /> : null}
+              </DragOverlay>}
+        </SortableContext>
       </DndContext>
       <div>
         <CreateColumn board_id={board_id} organization_id={organization_id} position={last_position + 1} />
@@ -113,7 +154,7 @@ export function Columns({ columns, board_id, organization_id, user_id}: { column
   )
 }
 
-export function Column({ column, user_id}: { column: ColumnWithCards, user_id: number }) {
+export function Column({ column, user_id, active_id}: { column: ColumnWithCards, user_id: number, active_id: string | null }) {
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
   const [date, setDate] = useState<Date>()
@@ -121,18 +162,23 @@ export function Column({ column, user_id}: { column: ColumnWithCards, user_id: n
 
   const formatted_date = date && format(date, 'yyyy-MM-dd')
 
-  const {attributes, listeners, setNodeRef: draggableNodeRef, transform} = useDraggable({
-    id: column.id,
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({
+    id: `column-${column.id}`,
+    data: {
+      type: 'column'
+    }
   });
- const {isOver, setNodeRef: droppableNodeRef} = useDroppable({id: column.id})
 
-  const draggable_style = {
-    // Outputs `translate3d(x, y, 0)`
-    transform: CSS.Translate.toString(transform),
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
   };
-  const droppable_style = {
-    opacity: !isOver ? 1 : 0.5
-  }
 
   async function handle_create_card(formData: FormData) {
     const card_title = formData.get('card_title') as string
@@ -146,13 +192,15 @@ export function Column({ column, user_id}: { column: ColumnWithCards, user_id: n
   }
   return (
     <div
-    ref={droppableNodeRef}
+    ref={setNodeRef}
       key={column.id}
-      style={droppable_style}
+      style={style}
+      {...attributes}
+      {...listeners}
       className="flex h-full min-w-[280px] flex-col rounded-xl border border-slate-800 bg-slate-900/40"
     >
       {/* Column header Draggable */}
-        <div ref={draggableNodeRef} {...listeners} {...attributes} style={draggable_style} className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
           <h2 className="text-sm font-semibold text-slate-200">{column.title}</h2>
           <span className="text-[11px] text-slate-500">
             {column.cards?.length}
@@ -161,7 +209,7 @@ export function Column({ column, user_id}: { column: ColumnWithCards, user_id: n
           </span>
         </div>
       {/* Cards container */}
-      <Cards cards={column.cards} />
+      <Cards cards={column.cards} active_id={active_id} column_id={column.id} />
       {/* Add card button */}
       <div className="border-t border-slate-800 p-3">
         {!isOpen && (
@@ -225,20 +273,21 @@ export function Column({ column, user_id}: { column: ColumnWithCards, user_id: n
   )
 }
 
-export function Cards({ cards}: { cards: Card[] | null }) {
+export function Cards({ cards, active_id, column_id }: { cards: Card[] | null; active_id: string | null; column_id: number }) {
+  // const {setNodeRef: droppableNodeRef} = useDroppable({ id: `column-${column_id}`, data: { type: 'column', column_id } })
+  if(!cards?.length) return 
+
+  const active_card = cards.find(card => `card-${card.id}` === active_id)
   return (
     <div className="flex-1 space-y-2 overflow-y-auto p-3">
-      {!cards?.length
-        ? (
-            <div className="rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-6 text-center text-[11px] text-slate-500">
-              Drop cards here
-            </div>
-          )
-        : ( 
-            cards.map((card: Card) => (
-                <Card card={card} key={card.id} />
-            ))
-          )}
+     <SortableContext items={cards.map(card => `card-${card.id}`)} strategy={verticalListSortingStrategy} >
+              {cards.map((card: Card) => (
+                  <Card card={card} key={card.id} />
+              ))}
+              {active_id && <DragOverlay>
+                {(active_id && active_card) ? <Card card={active_card} /> : null}
+              </DragOverlay>}
+      </SortableContext>
     </div>
   )
 }
@@ -247,13 +296,17 @@ export function Card({ card}: { card: Card }) {
   const formatted_date = format(card.due_date, 'MMM dd')
   const created_by = card.created_by
 
-  const {attributes, listeners, setNodeRef: setDraggableNodeRef, transform} = useDraggable({
-    id: card.id,
+  const {attributes, listeners, setNodeRef, transform, transition} = useSortable({
+    id: `card-${card.id}`,
+    data: {
+      type: 'card',
+      column_id: card.column_id,
+    }
   });
 
   const style = {
-    // Outputs `translate3d(x, y, 0)`
-    transform: CSS.Translate.toString(transform),
+    transform: CSS.Transform.toString(transform),
+    // transition,
   };
 
   const { data: user, isPending } = useQuery({
@@ -264,7 +317,7 @@ export function Card({ card}: { card: Card }) {
   return (
     <div
       key={card.id}
-      ref={setDraggableNodeRef}
+      ref={setNodeRef}
       {...attributes}
       {...listeners}
       style={style}
