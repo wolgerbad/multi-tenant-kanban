@@ -84,8 +84,8 @@ export default async function Page() {
                 <div className="flex items-center gap-2 md:justify-end">
                   {invite.status === 'pending' && (
                     <>
-                      <AcceptForm inviteId={invite.id} />
-                      <DeclineForm inviteId={invite.id} />
+                      <AcceptForm invite_id={invite.id} organization_id={invite.organization.id} />
+                      <DeclineForm invite_id={invite.id} organization_id={invite.organization.id} />
                     </>
                   )}
                   {invite.status === 'accepted' && (

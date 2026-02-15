@@ -6,7 +6,7 @@ async function send_organization_invite(req: Request, res: Response, next: NextF
     try {
        const result = await organization_invite_service.send_organization_invite(inviteDTO)
        if(!result.ok) throw new Error(result.error)
-        res.json({ok: true})
+        res.json({ok: true, data: result.data})
     } catch (error: any) {
         res.status(500).json({ error: error.message })        
     }

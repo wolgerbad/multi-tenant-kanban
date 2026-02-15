@@ -31,6 +31,7 @@ io.on('connection', async (socket) => {
     console.log("uh")
     const user_id = socket.data.user_id
     const [user] = await user_repository.get_user_by_id(user_id);
+    socket.join(`user-${user.id}`)
     const organization_ids = await organization_member_repository.get_organization_ids_of_member(user.id)
 
     organization_ids.map(org_id => socket.join(`organization-${org_id}`))
@@ -53,6 +54,14 @@ io.on('connection', async (socket) => {
 
     socket.on('dragndrop_event', async (organization_id) => {
         socket.to(`organization-${organization_id}`).emit('dragndrop_new')
+    })
+
+    socket.on('invite_send', async (receiver_id) => {
+        socket.to(`user-${receiver_id}`).emit('invite_new')
+    })
+
+    socket.on('invite_answer', async (organization_id) => {
+        socket.to(`organization-${organization_id}`).emit('invite_answer_new')
     })
 })
 

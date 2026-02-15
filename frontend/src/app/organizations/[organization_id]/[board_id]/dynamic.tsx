@@ -1,7 +1,7 @@
 'use client'
 
 import type { Card, ColumnWithCards, Invite, OrgMemberForDropdown, User } from '@/types'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { differenceInDays, format } from 'date-fns'
 import { LogOutIcon, UserIcon } from 'lucide-react'
 import Link from 'next/link'
@@ -400,9 +400,11 @@ export function Card({ card}: { card: Card }) {
   )
 }
 
-export function MembersDropdown({ organization_members, organization_id, sender_id }: { organization_members: OrgMemberForDropdown[], organization_id: number, sender_id: number }) {
+export function MembersDropdown({ organization_members, organization_id, sender_id }: { organization_members: OrgMemberForDropdown[], organization_id: number, sender_id: number}) {
   const [isOpen, setIsOpen] = useState<boolean>()
   const [error, setError] = useState()
+  const router = useRouter()
+  const queryClient = useQueryClient()
 
   const authenticated_member = organization_members?.find(member => member.user.id === sender_id)
   const can_send_invite = authenticated_member?.role === 'admin' ? true : authenticated_member?.role === 'owner' ? true : false; 
@@ -413,11 +415,24 @@ export function MembersDropdown({ organization_members, organization_id, sender_
     console.log("role", role)
     const inviteDTO = { email, org_id: organization_id, sender_id, role }
     const result = await send_organization_invite(inviteDTO)
-    if (!result.ok)
-      return setError(result.error)
+    if (!result.ok) return setError(result.error)
     setIsOpen(false)
     toast('Invite has been sent.')
+    socket.emit('invite_send', result.data)
  }
+
+ useEffect(function() {
+  socket.on('invite_new', () => {
+    queryClient.invalidateQueries({queryKey: ['organization_invites', sender_id]})
+  } )
+ }, [router, queryClient, sender_id])
+
+ useEffect(function() {
+  socket.on('invite_answer_new', () => {
+    router.refresh()
+  })
+ }, [router])
+
   return (
     <>
       <DropdownMenu>

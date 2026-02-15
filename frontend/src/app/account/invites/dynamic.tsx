@@ -2,13 +2,14 @@
 
 import { useRouter } from 'next/navigation'
 import { answer_organization_invite } from '@/helpers/organization_invite'
+import { socket } from '@/helpers/socket'
 
-export function AcceptForm({ inviteId }: {inviteId: number}) {
+export function AcceptForm({ invite_id, organization_id }: {invite_id: number; organization_id: number}) {
   const router = useRouter()
 
   async function handle_accept_invite() {
-   const result = await answer_organization_invite('accept', inviteId)
-   console.log("result", result)
+    const result = await answer_organization_invite('accept', invite_id)
+    socket.emit('invite_answer', organization_id)
     router.refresh()
   }
 
@@ -24,11 +25,12 @@ export function AcceptForm({ inviteId }: {inviteId: number}) {
   )
 }
 
-export function DeclineForm({ inviteId }: { inviteId: number }) {
+export function DeclineForm({ invite_id, organization_id }: { invite_id: number; organization_id: number }) {
   const router = useRouter()
 
   async function handle_decline_invite() {
-    await answer_organization_invite('decline', inviteId)
+    await answer_organization_invite('decline', invite_id)
+    socket.emit('invite_answer', organization_id)
     router.refresh()
   }
 
