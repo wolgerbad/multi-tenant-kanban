@@ -46,6 +46,10 @@ io.on('connection', async (socket) => {
     socket.on('column_created', async (organization_id) => {
         socket.to(`organization-${organization_id}`).emit('column_new') 
     })
+
+    socket.on('card_created', async (organization_id) => {
+        socket.to(`organization-${organization_id}`).emit('card_new')
+    })
 })
 
 server.listen(8000, () => {

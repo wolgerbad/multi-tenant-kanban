@@ -204,9 +204,18 @@ export function Column({ column, user_id, active_id}: { column: ColumnWithCards,
       return
     const cardDTO = { title: card_title, column_id: column.id, org_id: column.org_id, position: last_position + 1, created_by: user_id, priority, due_date: formatted_date }
     const result = await create_card(cardDTO)
-    console.log('result', result)
-    router.refresh()
+    if(result.ok) {
+      router.refresh()
+      socket.emit('card_created', column.org_id)
+    }
   }
+
+  useEffect(function() {
+    socket.on('card_new', () => {
+      router.refresh()
+    })
+  }, [router])
+
   return (
     <div
     ref={setNodeRef}
