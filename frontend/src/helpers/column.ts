@@ -4,7 +4,7 @@ export async function get_columns_by_board_id(boardId: number) {
 }
 
 export async function create_column(columnDTO: { title: string, position: number, org_id: number, board_id: number }) {
-  return await fetch('http://localhost:8000/column/create', {
+  const res = await fetch('http://localhost:8000/column/create', {
     method: 'POST',
     body: JSON.stringify(columnDTO),
     headers: {
@@ -12,6 +12,8 @@ export async function create_column(columnDTO: { title: string, position: number
     },
     credentials: 'include',
   })
+
+  return await res.json()
 }
 
 export async function switch_column_positions(column_ids: { dragged_column: number; dropped_column: number }) {

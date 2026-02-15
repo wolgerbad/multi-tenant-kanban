@@ -6,7 +6,7 @@ import { differenceInDays, format } from 'date-fns'
 import { LogOutIcon, UserIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FcInvite } from 'react-icons/fc'
 import { IoMdArrowDropdown } from 'react-icons/io'
 import { TbCalendarDue, TbOvalVerticalFilled } from 'react-icons/tb'
@@ -45,6 +45,7 @@ import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, u
 import { CSS } from "@dnd-kit/utilities"
 import { horizontalListSortingStrategy, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { logout } from '@/app/(auth)/actions'
+import { socket } from '@/helpers/socket'
 
 interface PropTypes {
   board_id: number
@@ -58,11 +59,18 @@ export function CreateColumn({ board_id, organization_id, position }: PropTypes)
 
   async function handle_create_column(formData: FormData) {
     const column_name = formData.get('column_name') as string
-    if (!column_name.trim().length)
-      return
-    await create_column({ title: column_name, board_id, org_id: organization_id, position })
+    if (!column_name.trim().length) return
+    const result = await create_column({ title: column_name, board_id, org_id: organization_id, position })
+    if(!result.ok) return
+    socket.emit('column_created', organization_id)
     router.refresh()
   }
+
+  useEffect(function() {
+    socket.on('column_new', () => {
+      router.refresh()
+    })
+  }, [router])
 
   return (
     <div>

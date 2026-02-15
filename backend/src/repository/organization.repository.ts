@@ -11,5 +11,9 @@ async function get_organizations_of_member(orgId: number[]) {
    return await db.select().from(organization).where(inArray(organization.id, orgId))
 }
 
+// async function get_organization_by_user_id(user_id: number) {
+// return await db.select().from(organization).where(eq(organization.))
+// }
 
-export const organization_repository = { create_organization, get_organizations_of_member }
+
+export const organization_repository = { create_organization, get_organizations_of_member}

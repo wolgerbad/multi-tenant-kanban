@@ -1,6 +1,7 @@
 "use client"
 
 import { create_board } from "@/helpers/board"
+import { socket } from "@/helpers/socket"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
@@ -14,8 +15,11 @@ export function CreateNewBoard({ organization_id }: { organization_id: number}) 
         // setError(null)
         const board_title = formData.get('board_title') as string
         if(!board_title?.length) return
-        await create_board({ board_title, organization_id })
-        router.refresh()
+        const result = await create_board({ board_title, organization_id })
+        if(result.ok) {
+            socket.emit('created:board', organization_id )
+            router.refresh()
+        }
         // if(!result.ok) setError(result.error)
     }
     

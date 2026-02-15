@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { User } from '@/types'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
+import { socket } from '@/helpers/socket'
 
 export function ProfileForm({ user }: { user: User }) {
   const router = useRouter()
@@ -48,6 +49,10 @@ export function ProfileForm({ user }: { user: User }) {
       setIsLoading(false)
     }
   }
+
+  useEffect(function() {
+    socket.emit('column_created', 'haiiiiiiiiiiiiiiii')
+  }, [])
 
   if (!isEditing) {
     return (

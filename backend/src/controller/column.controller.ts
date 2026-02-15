@@ -15,7 +15,7 @@ async function get_columns_by_board_id(req: Request, res:Response, next:NextFunc
 async function create_column(req: Request, res: Response, next: NextFunction) {
   const columnDTO = req.body;
   try {
-      await column_service.create_column(columnDTO)
+     await column_service.create_column(columnDTO)
       res.json({ok: true})
   } catch (error: any) {
     res.status(500).json({error: error.message})

@@ -5,6 +5,8 @@ import { jwtVerify } from "jose";
 import { env } from "../utils/envSchema.js";
 import { parseCookie } from "cookie";
 import { user_repository } from "../repository/user.repository.js";
+import { organization_repository } from "../repository/organization.repository.js";
+import { organization_member_repository } from "../repository/organization_member.repository.js";
 
 
 const SECRET = new TextEncoder().encode(env.JWT_SECRET)
@@ -29,9 +31,21 @@ io.on('connection', async (socket) => {
     console.log("uh")
     const user_id = socket.data.user_id
     const [user] = await user_repository.get_user_by_id(user_id);
+    const organization_ids = await organization_member_repository.get_organization_ids_of_member(user.id)
+
+    organization_ids.map(org_id => socket.join(`organization-${org_id}`))
+
+    
     if(!user) return;
     console.log("user", user)
 
+    socket.on('created:board', (organization_id) => {
+        console.log('fudge', organization_id)
+    })
+
+    socket.on('column_created', async (organization_id) => {
+        socket.to(`organization-${organization_id}`).emit('column_new') 
+    })
 })
 
 server.listen(8000, () => {
