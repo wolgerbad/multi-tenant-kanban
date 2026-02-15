@@ -7,6 +7,7 @@ import { env } from "../utils/envSchema.js";
 import { organization_repository } from "../repository/organization.repository.js";
 import { organization_member_repository } from "../repository/organization_member.repository.js";
 import { board_repository } from "../repository/board.repository.js";
+import { column_repository } from "../repository/column.repository.js";
 
 const signup_schema = z.object({
     name: z.string().min(3),
@@ -31,9 +32,10 @@ export async function signup(userDTO: SignupDTO) {
          if(userExists?.length) return {ok: false, error: 'User already exists.'}      
               const hashedPassword = await bcrypt.hash(userDTO.password, SALT_ROUNDS);
               const [user] = await user_repository.add_user({name: userDTO.name, email: userDTO.email, password: hashedPassword})
-              const [organization] = await organization_repository.create_organization(`${userDTO.name}'s organization`)
+              const [organization] = await organization_repository.create_organization({organization_title: `${userDTO.name}'s organization`})
               await organization_member_repository.create_organization_member(organization.id, user.id, 'owner')
-              await board_repository.create_board(organization.id, 'Welcome to Flowboard')
+              const [board] = await board_repository.create_board(organization.id, 'Welcome to Flowboard')
+              await column_repository.create_column({ board_id: board.id, org_id: organization.id, position: 0, title: 'First column'})
               const jwt = await new SignJWT({ id: user.id }).setProtectedHeader({alg: 'HS256'}).setIssuedAt().setExpirationTime('3 days').sign(SECRET)
               return {ok: true, data: jwt};
           } catch (error: any) {

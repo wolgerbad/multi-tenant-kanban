@@ -4,12 +4,14 @@ import { redirect } from 'next/navigation'
 import { get_boards_of_organization } from '@/helpers/board'
 import { get_organizations_of_member } from '@/helpers/organization'
 import { getSession } from '@/helpers/session'
+import { ProfileDropdown } from './[board_id]/dynamic'
+import { OrganizationsDropdown } from './organization_dropdown'
+import { CreateNewBoard } from './dynamic'
 
 export default async function Page({ params }: { params: Promise<{ organization_id: number }> }) {
   const organization_id = Number((await params).organization_id)
   const session = await getSession()
-  if (!session.ok)
-    redirect('/landing')
+  if (!session.ok) redirect('/')
 
   const organizations = await get_organizations_of_member(session.data.id)
   const isUserAllowed = organizations.find((organization: Organization) => organization.id === organization_id)
@@ -30,19 +32,9 @@ export default async function Page({ params }: { params: Promise<{ organization_
             <span className="text-sm font-medium tracking-tight text-slate-100">
               Flowboard
             </span>
-            <select className="px-2 py-1 rounded-md border border-slate-400">
-              {organizations?.map((org: Organization) => <option key={org.id} value={org.title}>{org.title}</option>)}
-            </select>
+            <OrganizationsDropdown organizations={organizations} organization_id={organization_id} />
           </div>
-          <div className="flex items-center gap-3 text-xs text-slate-300/80">
-            <span className="text-slate-400">
-              {/* You can show user email from session here later */}
-              Boards
-            </span>
-            <button className="rounded-full border border-slate-700 px-3 py-1 hover:border-slate-500 hover:text-slate-100 transition">
-              New board
-            </button>
-          </div>
+          <ProfileDropdown user={session.data} />
         </header>
 
         {/* Content */}
@@ -64,10 +56,14 @@ export default async function Page({ params }: { params: Promise<{ organization_
               </div>
             </div>
 
-            {boards?.length === 0 ? (
-              <div className="mt-6 rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400">
-                You&apos;re not part of any boards yet. Create a new one to get
-                started.
+            {!boards?.length  ? (
+              <div className='flex '>
+                <div className="mt-6 rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400 max-w-64">
+                  You&apos;re not part of any boards yet. Create a new one to get
+                  started.
+                </div>
+                
+                <CreateNewBoard />
               </div>
             ) : (
               <div className="mt-4 grid gap-4 sm:grid-cols-2 md:grid-cols-3">

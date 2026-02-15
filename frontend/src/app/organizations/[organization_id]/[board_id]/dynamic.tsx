@@ -44,6 +44,7 @@ import { toast } from 'sonner'
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import { horizontalListSortingStrategy, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { logout } from '@/app/(auth)/actions'
 
 interface PropTypes {
   board_id: number
@@ -89,7 +90,7 @@ export function Columns({ columns, board_id, organization_id, user_id}: { column
   const last_position = columns?.length ? columns.at(-1)?.position : -1; 
   const [activeId, setActiveId] = useState<string | null>(null)
   const router = useRouter()
-  const active_column = columns.find(column => `column-${column.id}` === activeId)
+  const active_column = columns?.find(column => `column-${column.id}` === activeId)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -208,7 +209,7 @@ export function Column({ column, user_id, active_id}: { column: ColumnWithCards,
       className="flex h-full min-w-[280px] flex-col rounded-xl border border-slate-800 bg-slate-900/40"
     >
       {/* Column header Draggable */}
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 cursor-all-scroll">
           <h2 className="text-sm font-semibold text-slate-200">{column.title}</h2>
           <span className="text-[11px] text-slate-500">
             {column.cards?.length}
@@ -430,12 +431,18 @@ export function MembersDropdown({ organization_members, organization_id, sender_
 }
 
 export function ProfileDropdown({ user }: { user: User }) {
+ const router = useRouter()
  const {data: invites, isPending} = useQuery({
     queryKey: ['organization_invites', user.id],
     queryFn: async () => get_organization_invites_of_member(user.id)
   })
+console.log("invites", invites)
+const pending_invites = invites?.length && invites?.filter((invite: Invite)  => invite.status === 'pending') 
 
-const pending_invites = invites?.filter((invite: Invite)  => invite.status === 'pending') 
+async function handle_logout() {
+  await logout()
+  router.refresh()
+}
 
   return (
     <DropdownMenu>
@@ -446,13 +453,13 @@ const pending_invites = invites?.filter((invite: Invite)  => invite.status === '
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-slate-900 text-slate-400">
         <DropdownMenuItem>
-          <Link href="/profile" className="flex gap-2 items-center">
+          <Link href="/account/profile" className="flex gap-2 items-center w-full h-full">
             <UserIcon />
             Profile
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link href="/account/invites" className="flex gap-2 items-center">
+          <Link href="/account/invites" className="flex gap-2 items-center w-full h-full">
             <FcInvite />
            <span> Invites </span>
             {pending_invites?.length > 0 && <span className='border border-slate-400 rounded-full px-2'>{pending_invites?.length}</span>}
@@ -460,8 +467,10 @@ const pending_invites = invites?.filter((invite: Invite)  => invite.status === '
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive">
-          <LogOutIcon />
-          Log out
+          <button onClick={handle_logout} className='w-full h-full flex items-center gap-2'>
+            <LogOutIcon />
+            Log out
+          </button>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

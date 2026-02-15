@@ -8,4 +8,12 @@ async function get_organizations_of_member(userId: number) {
    return {ok: true, data: orgs};
 }
 
-export const organization_service = { get_organizations_of_member }
+async function create_organization(DTO: { organization_title: string; organization_image: string | null; user_id: number }) {
+  const [organization] = await organization_repository.create_organization({ organization_title: DTO.organization_title, organization_image: DTO.organization_image })
+  if(!organization) return {ok: false, message: 'Failed to create organization'}
+
+   await organization_member_repository.create_organization_member(organization.id, DTO.user_id, 'owner')
+   return { ok: true }
+}
+
+export const organization_service = { get_organizations_of_member, create_organization }

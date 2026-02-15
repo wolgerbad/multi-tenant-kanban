@@ -4,3 +4,4 @@ import { organization_controller } from "../controller/organization.controller.j
 export const router = Router();
 
 router.get('/:userId', organization_controller.get_organizations_of_member )
+router.post('/create', organization_controller.create_organization)

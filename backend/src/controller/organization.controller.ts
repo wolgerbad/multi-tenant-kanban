@@ -12,4 +12,15 @@ async function get_organizations_of_member(req: Request, res: Response, next: Ne
     }
 }
 
-export const organization_controller = { get_organizations_of_member }
+async function create_organization(req: Request, res: Response, next: NextFunction) {
+    const DTO = req.body
+    try {
+        const result = await organization_service.create_organization(DTO)
+        if(!result.ok) throw new Error(result.message)
+        res.json({ok: true})
+    } catch (error: any) {
+        res.status(500).json({ error: error.message })
+    }
+}
+
+export const organization_controller = { get_organizations_of_member, create_organization }

@@ -13,8 +13,7 @@ export default async function BoardPage({
 }) {
   const { organization_id, board_id } = await params
   const session = await getSession()
-  if (!session.ok)
-    redirect('/landing')
+  if (!session.ok) redirect('/')
   console.log('session', session)
 
   const columns = await get_columns_by_board_id(board_id)
@@ -33,7 +32,7 @@ export default async function BoardPage({
           <div className="mx-auto flex max-w-[1600px] items-center justify-between">
             <div className="flex items-center gap-4">
               <Link
-                href={`/${organization_id}`}
+                href={`/organizations/${organization_id}`}
                 className="flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition"
               >
                 ← Back to boards

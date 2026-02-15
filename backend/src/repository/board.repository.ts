@@ -3,7 +3,7 @@ import { db } from "../db/index.js";
 import { board } from "../db/schema.js";
 
 async function create_board(orgId: number, title: string) {
-   return await db.insert(board).values({org_id: orgId, title})
+   return await db.insert(board).values({org_id: orgId, title}).$returningId()
 }
 
 async function get_boards_of_organization(orgId: number) {

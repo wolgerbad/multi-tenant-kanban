@@ -1,32 +1,32 @@
-import { format } from 'date-fns'
-import { redirect } from 'next/navigation'
-import { get_organization_invites_of_member } from '@/helpers/organization_invite'
-import { getSession } from '@/helpers/session'
-import { AcceptForm, DeclineForm } from './dynamic'
-import { Invite, Organization, User } from '@/types'
-
+import { format } from 'date-fns';
+import { redirect } from 'next/navigation';
+import { BackButton } from '../back-button';
+import { get_organization_invites_of_member } from '@/helpers/organization_invite';
+import { getSession } from '@/helpers/session';
+import { AcceptForm, DeclineForm } from './dynamic';
+import { Invite, Organization, User } from '@/types';
 
 export default async function Page() {
-//   const invites = MOCK_INVITES; // later: replace with data from backend
-  const session = await getSession()
-  if (!session.ok)
-    redirect('/login')
+  //   const invites = MOCK_INVITES; // later: replace with data from backend
+  const session = await getSession();
+  if (!session.ok) redirect('/login');
 
-  const invites = await get_organization_invites_of_member(session.data.id)
-  const hasInvites = invites?.length > 0
+  const invites = await get_organization_invites_of_member(session.data.id);
+  const hasInvites = invites?.length > 0;
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-6 py-10">
         {/* Header */}
-        <header className="mb-8 flex items-center justify-between gap-4">
+        <header className="mb-8 flex flex-col gap-4">
+          <BackButton />
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
               Invites
             </h1>
             <p className="mt-1 text-sm text-slate-400">
-              See the workspaces you&apos;ve been invited to and choose where you
-              want to join.
+              See the workspaces you&apos;ve been invited to and choose where
+              you want to join.
             </p>
           </div>
         </header>
@@ -64,26 +64,18 @@ export default async function Page() {
                         {invite.organization.title}
                       </p>
                       <span className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-[2px] text-[11px] font-medium text-emerald-300">
-                        Invited as
-                        {' '}
-                        {invite.role}
+                        Invited as {invite.role}
                       </span>
                     </div>
                     <p className="text-xs text-slate-400">
-                      Invited by
-                      {' '}
+                      Invited by{' '}
                       <span className="font-medium text-slate-200">
                         {invite.sender.name}
-                      </span>
-                      {' '}
-                      ·
-                      {' '}
-                      {invite.sender.email}
+                      </span>{' '}
+                      · {invite.sender.email}
                     </p>
                     <p className="text-[11px] text-slate-500">
-                      Sent on
-                      {' '}
-                      {format(invite.created_at, 'MMM dd yyyy')}
+                      Sent on {format(invite.created_at, 'MMM dd yyyy')}
                     </p>
                   </div>
                 </div>
@@ -113,5 +105,5 @@ export default async function Page() {
         )}
       </div>
     </main>
-  )
+  );
 }
