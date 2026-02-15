@@ -8,7 +8,7 @@ async function get_columns_by_board_id(req: Request, res:Response, next:NextFunc
         if(!result.ok) throw new Error(result.message)
         res.json(result.data)
     } catch (error: any) {
-        res.status(500).json({error: error.message})
+        res.status(500).json([])
     }
 }
 

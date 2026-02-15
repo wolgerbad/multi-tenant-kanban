@@ -13,4 +13,8 @@ async function get_board_by_id(boardId: number) {
   return {ok: true, data: result}
 }
 
-export const board_service = { get_boards_of_organization, get_board_by_id }
+async function create_board(DTO: { board_title: string; organization_id: number }) {
+ return await board_repository.create_board(DTO.organization_id, DTO.board_title)
+}
+
+export const board_service = { get_boards_of_organization, get_board_by_id, create_board }

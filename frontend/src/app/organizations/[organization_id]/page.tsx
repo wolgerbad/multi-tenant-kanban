@@ -63,7 +63,7 @@ export default async function Page({ params }: { params: Promise<{ organization_
                   started.
                 </div>
                 
-                <CreateNewBoard />
+                <CreateNewBoard organization_id={organization_id} />
               </div>
             ) : (
               <div className="mt-4 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -84,6 +84,7 @@ export default async function Page({ params }: { params: Promise<{ organization_
                     </div>
                   </Link>
                 ))}
+                <CreateNewBoard organization_id={organization_id} />
               </div>
             )}
           </section>

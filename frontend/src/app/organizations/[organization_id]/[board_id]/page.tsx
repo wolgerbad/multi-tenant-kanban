@@ -4,7 +4,7 @@ import { get_board_by_id } from '@/helpers/board'
 import { get_columns_by_board_id } from '@/helpers/column'
 import { get_members_of_organization } from '@/helpers/organization_member'
 import { getSession } from '@/helpers/session'
-import { Columns, MembersDropdown, ProfileDropdown } from './dynamic'
+import { Columns, CreateColumn, MembersDropdown, ProfileDropdown } from './dynamic'
 
 export default async function BoardPage({
   params,
@@ -23,7 +23,6 @@ export default async function BoardPage({
 
   const organization_members = await get_members_of_organization(+organization_id)
 
-  console.log('org members', organization_members)
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="flex min-h-screen flex-col">
@@ -57,10 +56,20 @@ export default async function BoardPage({
         </header>
 
         {/* Board content - horizontal scroll */}
-        {isUserAllowed && (
+        {isUserAllowed && columns?.length && (
           <div className="flex-1 overflow-x-auto">
             <Columns columns={columns} organization_id={organization_id} board_id={board_id} user_id={session.data.id} />
           </div>
+        )}
+        {isUserAllowed && !columns?.length && ( 
+            <div className='flex items-center '>
+              <div className="mt-6 rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400 max-w-64">
+                  You&apos;re not part of any boards yet. Create a new one to get
+                  started.
+              </div>
+                        
+            <CreateColumn board_id={board_id} organization_id={organization_id} position={0} />
+            </div>
         )}
         {
           !isUserAllowed && (

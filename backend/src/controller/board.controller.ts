@@ -23,4 +23,14 @@ async function get_board_by_id(req: Request, res: Response, next: NextFunction) 
     }
 }
 
-export const board_controller = { get_boards_of_organization, get_board_by_id }
+async function create_board(req: Request, res: Response, next: NextFunction) {
+    const DTO = req.body
+    try {
+        await board_service.create_board(DTO)
+        return { ok: true }
+    } catch (error: any) {
+        res.status(500).json({ error: error.message })
+    }
+}
+
+export const board_controller = { get_boards_of_organization, get_board_by_id, create_board }
