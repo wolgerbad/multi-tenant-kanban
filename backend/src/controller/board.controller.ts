@@ -27,7 +27,7 @@ async function create_board(req: Request, res: Response, next: NextFunction) {
     const DTO = req.body
     try {
         await board_service.create_board(DTO)
-        return { ok: true }
+        res.json({ok: true})
     } catch (error: any) {
         res.status(500).json({ error: error.message })
     }

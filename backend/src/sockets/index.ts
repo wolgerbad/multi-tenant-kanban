@@ -39,8 +39,8 @@ io.on('connection', async (socket) => {
     if(!user) return;
     console.log("user", user)
 
-    socket.on('created:board', (organization_id) => {
-        console.log('fudge', organization_id)
+    socket.on('board_create', (organization_id) => {
+        socket.to(`organization-${organization_id}`).emit('board_new')
     })
 
     socket.on('column_created', async (organization_id) => {
