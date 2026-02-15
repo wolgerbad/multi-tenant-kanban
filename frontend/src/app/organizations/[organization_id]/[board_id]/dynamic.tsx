@@ -121,13 +121,19 @@ export function Columns({ columns, board_id, organization_id, user_id}: { column
     
     if(active.data.current?.type === 'column' && over.data.current?.type === 'column') {
       if(drag_id === drop_id) return;
-      await switch_column_positions({dragged_column: drag_id, dropped_column: drop_id })
-      router.refresh()
+      const result = await switch_column_positions({dragged_column: drag_id, dropped_column: drop_id })
+      if(result.ok) {
+        socket.emit('dragndrop_event', organization_id)
+        router.refresh()
+      }
     }
     if(active.data.current?.type === 'column' && over.data.current?.type === 'card') {
       if(drag_id === over.data.current.column_id) return;
-      await switch_column_positions({dragged_column: drag_id, dropped_column: over.data.current.column_id })
-      router.refresh()
+      const result = await switch_column_positions({dragged_column: drag_id, dropped_column: over.data.current.column_id })
+      if(result.ok) {
+        socket.emit('dragndrop_event', organization_id)
+        router.refresh()
+      }
     }
 
     if(active.data.current?.type === 'card' && over.data.current?.type === 'card') {
@@ -135,15 +141,23 @@ export function Columns({ columns, board_id, organization_id, user_id}: { column
        if(drag_id === drop_id) return;
        console.log('switch_card_positions_same_column_running', drag_id, drop_id)
        const result = await switch_card_positions({dragged_card: drag_id, dropped_card: drop_id})
-       console.log("result", result)
-        router.refresh()
+       if(result.ok) {
+         socket.emit('dragndrop_event', organization_id)
+         router.refresh()
+        }
       } else if(active.data.current?.column_id !== over.data.current?.column_id) {
-        await switch_card_column({ card_id: drag_id, column_id: over.data.current.column_id })
-        router.refresh()
+        const result = await switch_card_column({ card_id: drag_id, column_id: over.data.current.column_id })
+        if(result.ok) {
+          socket.emit('dragndrop_event', organization_id)
+          router.refresh()
+        }
       }
     } else if(active.data.current?.type === 'card' && over.data.current?.type === 'column') {
-      await switch_card_column({ card_id: drag_id, column_id: drop_id })
-      router.refresh()
+      const result = await switch_card_column({ card_id: drag_id, column_id: drop_id })
+      if(result.ok) {
+        socket.emit('dragndrop_event', organization_id)
+        router.refresh()
+      }
     }
     return
   }
@@ -151,6 +165,12 @@ export function Columns({ columns, board_id, organization_id, user_id}: { column
   function handle_drag_start(event: DragStartEvent) {
     setActiveId(event.active.id)
   }
+
+  useEffect(function() {
+    socket.on('dragndrop_new', () => {
+      router.refresh()
+    })
+  }, [router])
 
   return (
     <div className="flex gap-4 p-6 overflow-hidden">

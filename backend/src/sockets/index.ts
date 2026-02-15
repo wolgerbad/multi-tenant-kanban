@@ -50,6 +50,10 @@ io.on('connection', async (socket) => {
     socket.on('card_created', async (organization_id) => {
         socket.to(`organization-${organization_id}`).emit('card_new')
     })
+
+    socket.on('dragndrop_event', async (organization_id) => {
+        socket.to(`organization-${organization_id}`).emit('dragndrop_new')
+    })
 })
 
 server.listen(8000, () => {
