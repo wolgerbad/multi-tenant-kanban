@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { User } from '@/types'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -10,6 +10,8 @@ export function ProfileForm({ user }: { user: User }) {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+
+
 
   async function handle_update_profile(formData: FormData) {
     setIsLoading(true)

@@ -9,6 +9,7 @@ async function signup(req: Request, res: Response, next: NextFunction) {
     
      res.cookie('jwt', result.data, {
         httpOnly: true,
+        secure: true,
      }).json({ok: true})
 }
 
@@ -18,7 +19,8 @@ async function login(req: Request, res: Response, next: NextFunction) {
     if(!result.ok) res.status(500).json({error: result.error})
     
     res.cookie("jwt", result.data, {
-        httpOnly: true
+        httpOnly: true,
+        secure: true
     }).json({ ok: true })
 }
 
