@@ -6,4 +6,8 @@ async function get_user(userId: number) {
     return {ok: true, data: user};
 }
 
-export const user_service = { get_user }
+async function update_user_image(DTO: { user_id: number; image: string }) {
+   return await user_repository.update_user_image(DTO)
+}
+
+export const user_service = { get_user, update_user_image }

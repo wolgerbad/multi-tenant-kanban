@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/helpers/session';
 import { BackButton } from '../back-button';
-import { ProfileForm } from './dynamic';
+import { ProfileForm, UserImage } from './dynamic';
 import { User } from '@/types';
 
 export default async function ProfilePage() {
@@ -30,21 +30,7 @@ export default async function ProfilePage() {
           <article className="rounded-sm border border-slate-800 bg-slate-900/60 p-6 shadow-[0_12px_40px_rgba(15,23,42,0.8)]">
             <div className="flex flex-col gap-6 md:flex-row md:items-start">
               {/* Avatar Section */}
-              <div className="flex flex-col items-center gap-4">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-500/10 text-2xl font-semibold text-emerald-300 ring-2 ring-slate-700">
-                  {user.image ? (
-                    <img
-                      src={user.image}
-                      alt={user.name}
-                      className="h-full w-full rounded-full object-cover"
-                    />
-                  ) : (
-                    <span>{user.name.slice(0, 2).toUpperCase()}</span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-400">Profile picture</p>
-              </div>
-
+              <UserImage user={user} />
               {/* User Info */}
               <div className="flex-1 space-y-4">
                 <div>

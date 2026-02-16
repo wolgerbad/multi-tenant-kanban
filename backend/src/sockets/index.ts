@@ -7,12 +7,23 @@ import { parseCookie } from "cookie";
 import { user_repository } from "../repository/user.repository.js";
 import { organization_repository } from "../repository/organization.repository.js";
 import { organization_member_repository } from "../repository/organization_member.repository.js";
+import { S3Client } from "@aws-sdk/client-s3";
+import dotenv from "dotenv";
 
+dotenv.config()
 
 const SECRET = new TextEncoder().encode(env.JWT_SECRET)
-
 const server = createServer(app)
 const io = new Server(server, { cors: { origin: 'http://localhost:3000', credentials: true } })
+
+export const client = new S3Client({
+    region: process.env.AWS_REGION!,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
+    }
+})
+
 
 io.use(async (socket, next) => {
     console.log("hey, hi")

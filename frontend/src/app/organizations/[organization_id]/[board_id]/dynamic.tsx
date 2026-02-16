@@ -356,7 +356,7 @@ export function Card({ card}: { card: Card }) {
   };
 
   const { data: user, isPending } = useQuery({
-    queryKey: ['created_by'],
+    queryKey: ['created_by', card.id],
     queryFn: async () => get_user(created_by),
   })
 

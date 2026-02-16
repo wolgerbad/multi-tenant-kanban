@@ -10,5 +10,15 @@ async function get_user(req: Request, res: Response, next: NextFunction) {
     res.json(result.data); 
 }
 
-export const user_controller = { get_user }
+async function update_user_image(req: Request, res: Response, next: NextFunction) {
+    const DTO = req.body
+    try {
+        await user_service.update_user_image(DTO)
+        res.json({ ok: true })
+    } catch (error: any) {
+        res.status(500).json({ok: false, message: error.message })
+    }
+}
+
+export const user_controller = { get_user, update_user_image }
  
