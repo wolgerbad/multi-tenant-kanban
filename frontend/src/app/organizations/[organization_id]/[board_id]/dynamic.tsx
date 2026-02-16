@@ -1,17 +1,23 @@
-'use client'
+'use client';
 
-import type { Card, ColumnWithCards, Invite, OrgMemberForDropdown, User } from '@/types'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { differenceInDays, format, isBefore } from 'date-fns'
-import { LogOutIcon, TriangleAlert, UserIcon } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { FcInvite } from 'react-icons/fc'
-import { IoMdArrowDropdown } from 'react-icons/io'
-import { TbCalendarDue, TbOvalVerticalFilled } from 'react-icons/tb'
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
+import type {
+  Card,
+  ColumnWithCards,
+  Invite,
+  OrgMemberForDropdown,
+  User,
+} from '@/types';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { differenceInDays, format, isBefore } from 'date-fns';
+import { LogOutIcon, TriangleAlert, UserIcon, Plus, X } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { FcInvite } from 'react-icons/fc';
+import { IoMdArrowDropdown } from 'react-icons/io';
+import { TbCalendarDue, TbOvalVerticalFilled } from 'react-icons/tb';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogClose,
@@ -19,7 +25,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,196 +34,340 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
-import { create_card, switch_card_column, switch_card_positions } from '@/helpers/card'
-import { create_column, switch_column_positions } from '@/helpers/column'
-import { get_organization_invites_of_member, send_organization_invite } from '@/helpers/organization_invite'
-import { get_user } from '@/helpers/user'
-import { toast } from 'sonner'
+} from '@/components/ui/popover';
+import {
+  create_card,
+  switch_card_column,
+  switch_card_positions,
+} from '@/helpers/card';
+import { create_column, switch_column_positions } from '@/helpers/column';
+import {
+  get_organization_invites_of_member,
+  send_organization_invite,
+} from '@/helpers/organization_invite';
+import { get_user } from '@/helpers/user';
+import { toast } from 'sonner';
 
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
-import { horizontalListSortingStrategy, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import { logout } from '@/app/(auth)/actions'
-import { socket } from '@/helpers/socket'
-import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '@/components/ui/combobox'
-import { get_members_of_organization } from '@/helpers/organization_member'
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  horizontalListSortingStrategy,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { logout } from '@/app/(auth)/actions';
+import { socket } from '@/helpers/socket';
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@/components/ui/combobox';
+import { get_members_of_organization } from '@/helpers/organization_member';
+import { Input } from '@/components/ui/input';
 
 interface PropTypes {
-  board_id: number
-  organization_id: number
-  position: number
+  board_id: number;
+  organization_id: number;
+  position: number;
 }
 
-export function CreateColumn({ board_id, organization_id, position }: PropTypes) {
-  const [isOpen, setIsOpen] = useState(false)
-  const router = useRouter()
+export function CreateColumn({
+  board_id,
+  organization_id,
+  position,
+}: PropTypes) {
+  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   async function handle_create_column(formData: FormData) {
-    const column_name = formData.get('column_name') as string
-    if (!column_name.trim().length) return
-    const result = await create_column({ title: column_name, board_id, org_id: organization_id, position })
-    if(!result.ok) return
-    socket.emit('column_created', organization_id)
-    router.refresh()
+    const column_name = formData.get('column_name') as string;
+    if (!column_name.trim().length) return;
+    const result = await create_column({
+      title: column_name,
+      board_id,
+      org_id: organization_id,
+      position,
+    });
+    if (!result.ok) return;
+    socket.emit('column_created', organization_id);
+    router.refresh();
+    setIsOpen(false);
   }
 
-  useEffect(function() {
-    socket.on('column_new', () => {
-      router.refresh()
-    })
-  }, [router])
+  useEffect(
+    function () {
+      socket.on('column_new', () => {
+        router.refresh();
+      });
+    },
+    [router]
+  );
 
   return (
     <div>
       {!isOpen && (
-        <button onClick={() => setIsOpen(true)} className="rounded-full border border-slate-700 px-3 py-1 text-base cursor-pointer text-slate-300 hover:border-slate-500 hover:text-slate-100 transition">
+        <Button
+          onClick={() => setIsOpen(true)}
+          variant="outline"
+          size="sm"
+          className="rounded-full gap-2 text-slate-400 border-slate-700 hover:border-slate-600 hover:text-slate-200 bg-slate-900 hover:bg-slate-900 cursor-pointer"
+        >
+          <Plus size={16} />
           Add column
-        </button>
+        </Button>
       )}
       {isOpen && (
-        <form action={handle_create_column}>
-          <div className="mb-2">
-            <input type="text" name="column_name" className="bg-white rounded-md px-4 py-2 border border-slate-600 outline-0 text-slate-800" />
-          </div>
-          <div className="flex gap-1 justify-end">
-            <button type="button" className="bg-red-600 rounded-lg px-2 py-1 cursor-pointer" onClick={() => setIsOpen(false)}>cancel</button>
-            <button className="bg-green-600 rounded-lg px-2 py-1 cursor-pointer">create column</button>
+        <form
+          action={handle_create_column}
+          className="flex flex-col gap-2 min-w-[200px]"
+        >
+          <Input
+            name="column_name"
+            placeholder="Add new column"
+            className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500 outline-0"
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-slate-400 hover:text-slate-100 hover:bg-transparent cursor-pointer"
+              onClick={() => setIsOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+            >
+              Create
+            </Button>
           </div>
         </form>
       )}
     </div>
-  )
+  );
 }
 
-export function Columns({ columns, board_id, organization_id, user_id}: { columns: ColumnWithCards[], board_id: number, organization_id: number, user_id: number }) {
-  const last_position = columns?.length ? columns.at(-1)?.position : -1; 
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const router = useRouter()
-  const active_column = columns?.find(column => `column-${column.id}` === activeId)
+export function Columns({
+  columns,
+  board_id,
+  organization_id,
+  user_id,
+}: {
+  columns: ColumnWithCards[];
+  board_id: number;
+  organization_id: number;
+  user_id: number;
+}) {
+  const last_position = columns?.length ? columns.at(-1)?.position : -1;
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const router = useRouter();
+  const active_column = columns?.find(
+    (column) => `column-${column.id}` === activeId
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         delay: 250,
-        tolerance: 5  
-      }
+        tolerance: 5,
+      },
     })
-  )
+  );
 
   async function handle_drag_end(event: DragEndEvent) {
-    const {active, over} = event;
-    setActiveId(null)
-    console.log(active, over)
-    if(!over) return
-
+    const { active, over } = event;
+    setActiveId(null);
+    console.log(active, over);
+    if (!over) return;
 
     const drag_id = +active.id.split('-')[1];
     const drop_id = +over.id.split('-')[1];
-    
-    if(active.data.current?.type === 'column' && over.data.current?.type === 'column') {
-      if(drag_id === drop_id) return;
-      const result = await switch_column_positions({dragged_column: drag_id, dropped_column: drop_id })
-      if(result.ok) {
-        socket.emit('dragndrop_event', organization_id)
-        router.refresh()
+
+    if (
+      active.data.current?.type === 'column' &&
+      over.data.current?.type === 'column'
+    ) {
+      if (drag_id === drop_id) return;
+      const result = await switch_column_positions({
+        dragged_column: drag_id,
+        dropped_column: drop_id,
+      });
+      if (result.ok) {
+        socket.emit('dragndrop_event', organization_id);
+        router.refresh();
       }
     }
-    if(active.data.current?.type === 'column' && over.data.current?.type === 'card') {
-      if(drag_id === over.data.current.column_id) return;
-      const result = await switch_column_positions({dragged_column: drag_id, dropped_column: over.data.current.column_id })
-      if(result.ok) {
-        socket.emit('dragndrop_event', organization_id)
-        router.refresh()
+    if (
+      active.data.current?.type === 'column' &&
+      over.data.current?.type === 'card'
+    ) {
+      if (drag_id === over.data.current.column_id) return;
+      const result = await switch_column_positions({
+        dragged_column: drag_id,
+        dropped_column: over.data.current.column_id,
+      });
+      if (result.ok) {
+        socket.emit('dragndrop_event', organization_id);
+        router.refresh();
       }
     }
 
-    if(active.data.current?.type === 'card' && over.data.current?.type === 'card') {
-      if(active.data.current?.column_id === over.data.current?.column_id) {
-       if(drag_id === drop_id) return;
-       console.log('switch_card_positions_same_column_running', drag_id, drop_id)
-       const result = await switch_card_positions({dragged_card: drag_id, dropped_card: drop_id})
-       if(result.ok) {
-         socket.emit('dragndrop_event', organization_id)
-         router.refresh()
+    if (
+      active.data.current?.type === 'card' &&
+      over.data.current?.type === 'card'
+    ) {
+      if (active.data.current?.column_id === over.data.current?.column_id) {
+        if (drag_id === drop_id) return;
+        console.log(
+          'switch_card_positions_same_column_running',
+          drag_id,
+          drop_id
+        );
+        const result = await switch_card_positions({
+          dragged_card: drag_id,
+          dropped_card: drop_id,
+        });
+        if (result.ok) {
+          socket.emit('dragndrop_event', organization_id);
+          router.refresh();
         }
-      } else if(active.data.current?.column_id !== over.data.current?.column_id) {
-        const result = await switch_card_column({ card_id: drag_id, column_id: over.data.current.column_id })
-        if(result.ok) {
-          socket.emit('dragndrop_event', organization_id)
-          router.refresh()
+      } else if (
+        active.data.current?.column_id !== over.data.current?.column_id
+      ) {
+        const result = await switch_card_column({
+          card_id: drag_id,
+          column_id: over.data.current.column_id,
+        });
+        if (result.ok) {
+          socket.emit('dragndrop_event', organization_id);
+          router.refresh();
         }
       }
-    } else if(active.data.current?.type === 'card' && over.data.current?.type === 'column') {
-      const result = await switch_card_column({ card_id: drag_id, column_id: drop_id })
-      if(result.ok) {
-        socket.emit('dragndrop_event', organization_id)
-        router.refresh()
+    } else if (
+      active.data.current?.type === 'card' &&
+      over.data.current?.type === 'column'
+    ) {
+      const result = await switch_card_column({
+        card_id: drag_id,
+        column_id: drop_id,
+      });
+      if (result.ok) {
+        socket.emit('dragndrop_event', organization_id);
+        router.refresh();
       }
     }
-    return
+    return;
   }
 
   function handle_drag_start(event: DragStartEvent) {
-    setActiveId(event.active.id)
+    setActiveId(event.active.id);
   }
 
-  useEffect(function() {
-    socket.on('dragndrop_new', () => {
-      router.refresh()
-    })
-  }, [router])
+  useEffect(
+    function () {
+      socket.on('dragndrop_new', () => {
+        router.refresh();
+      });
+    },
+    [router]
+  );
 
   return (
     <div className="flex gap-4 p-6 ">
-      <DndContext onDragStart={handle_drag_start} onDragEnd={handle_drag_end} sensors={sensors}>
-        <SortableContext items={columns?.map(column => `column-${column.id}`)} strategy={horizontalListSortingStrategy}>
-          {columns?.length && columns.map((column: ColumnWithCards) => (
-            <Column key={column.id} column={column} user_id={user_id} active_id={activeId} />
-          ))}
-          {activeId && <DragOverlay>
-                {(activeId && active_column) ? <Column column={active_column} user_id={user_id} active_id={activeId} /> : null}
-              </DragOverlay>}
+      <DndContext
+        onDragStart={handle_drag_start}
+        onDragEnd={handle_drag_end}
+        sensors={sensors}
+      >
+        <SortableContext
+          items={columns?.map((column) => `column-${column.id}`)}
+          strategy={horizontalListSortingStrategy}
+        >
+          {columns?.length &&
+            columns.map((column: ColumnWithCards) => (
+              <Column
+                key={column.id}
+                column={column}
+                user_id={user_id}
+                active_id={activeId}
+              />
+            ))}
+          {activeId && (
+            <DragOverlay>
+              {activeId && active_column ? (
+                <Column
+                  column={active_column}
+                  user_id={user_id}
+                  active_id={activeId}
+                />
+              ) : null}
+            </DragOverlay>
+          )}
         </SortableContext>
       </DndContext>
       <div>
-        <CreateColumn board_id={board_id} organization_id={organization_id} position={last_position + 1} />
+        <CreateColumn
+          board_id={board_id}
+          organization_id={organization_id}
+          position={last_position + 1}
+        />
       </div>
     </div>
-  )
+  );
 }
 
-export function Column({ column, user_id, active_id}: { column: ColumnWithCards, user_id: number, active_id: string | null }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const router = useRouter()
-  const [date, setDate] = useState<Date>()
-  const last_position = column.cards.at(-1)?.position ?? -1
+export function Column({
+  column,
+  user_id,
+  active_id,
+}: {
+  column: ColumnWithCards;
+  user_id: number;
+  active_id: string | null;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  const [date, setDate] = useState<Date>();
+  const last_position = column.cards.at(-1)?.position ?? -1;
 
-  const formatted_date = date && format(date, 'yyyy-MM-dd')
+  const formatted_date = date && format(date, 'yyyy-MM-dd');
 
-  const {data: users, isPending} = useQuery({
-    queryKey: ['members_of_organization', column.org_id ],
-    queryFn: async () => await get_members_of_organization(column.org_id)
-  })
-
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({
-    id: `column-${column.id}`,
-    data: {
-      type: 'column'
-    }
+  const { data: users, isPending } = useQuery({
+    queryKey: ['members_of_organization', column.org_id],
+    queryFn: async () => await get_members_of_organization(column.org_id),
   });
+
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: `column-${column.id}`,
+      data: {
+        type: 'column',
+      },
+    });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -225,28 +375,37 @@ export function Column({ column, user_id, active_id}: { column: ColumnWithCards,
   };
 
   async function handle_create_card(formData: FormData) {
-    const card_title = formData.get('card_title') as string
-    const priority = formData.get('priority') as string
-    if (!card_title.trim().length || !priority || !date)
-      return
-    const cardDTO = { title: card_title, column_id: column.id, org_id: column.org_id, position: last_position + 1, created_by: user_id, priority, due_date: formatted_date }
-    const result = await create_card(cardDTO)
-    if(result.ok) {
-      router.refresh()
-      socket.emit('card_created', column.org_id)
+    const card_title = formData.get('card_title') as string;
+    const priority = formData.get('priority') as string;
+    if (!card_title.trim().length || !priority || !date) return;
+    const cardDTO = {
+      title: card_title,
+      column_id: column.id,
+      org_id: column.org_id,
+      position: last_position + 1,
+      created_by: user_id,
+      priority,
+      due_date: formatted_date,
+    };
+    const result = await create_card(cardDTO);
+    if (result.ok) {
+      router.refresh();
+      socket.emit('card_created', column.org_id);
     }
   }
 
-
-  useEffect(function() {
-    socket.on('card_new', () => {
-      router.refresh()
-    })
-  }, [router])
+  useEffect(
+    function () {
+      socket.on('card_new', () => {
+        router.refresh();
+      });
+    },
+    [router]
+  );
 
   return (
     <div
-    ref={setNodeRef}
+      ref={setNodeRef}
       key={column.id}
       style={style}
       {...attributes}
@@ -254,26 +413,39 @@ export function Column({ column, user_id, active_id}: { column: ColumnWithCards,
       className="flex h-full min-w-[280px] flex-col rounded-xl border border-slate-800 bg-slate-900/40"
     >
       {/* Column header Draggable */}
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 cursor-all-scroll">
-          <h2 className="text-sm font-semibold text-slate-200">{column.title}</h2>
-          <span className="text-[11px] text-slate-500">
-            {column.cards?.length}
-            {' '}
-            {column.cards?.length === 1 ? 'card' : 'cards'}
-          </span>
-        </div>
+      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 cursor-all-scroll">
+        <h2 className="text-sm font-semibold text-slate-200">{column.title}</h2>
+        <span className="text-[11px] text-slate-500">
+          {column.cards?.length} {column.cards?.length === 1 ? 'card' : 'cards'}
+        </span>
+      </div>
       {/* Cards container */}
-      <Cards cards={column.cards} active_id={active_id} column_id={column.id} organization_id={column.org_id} />
+      <Cards
+        cards={column.cards}
+        active_id={active_id}
+        column_id={column.id}
+        organization_id={column.org_id}
+      />
       {/* Add card button */}
       <div className="border-t border-slate-800 p-3">
         {!isOpen && (
-          <button onClick={() => setIsOpen(true)} className="w-full rounded-lg border border-dashed border-slate-700 px-3 py-2 text-[11px] text-slate-400 hover:border-slate-600 hover:text-slate-300 transition">
+          <button
+            onClick={() => setIsOpen(true)}
+            className="w-full rounded-lg border border-dashed border-slate-700 px-3 py-2 text-[11px] text-slate-400 hover:border-slate-600 hover:text-slate-300 transition"
+          >
             + Add card
           </button>
         )}
         {isOpen && (
-          <form action={handle_create_card} className="w-full text-[11px] text-slate-400">
-            <input type="text" name="card_title" className="w-full mb-1 px-3 py-2 rounded-lg outline-0 bg-white " />
+          <form
+            action={handle_create_card}
+            className="w-full text-[11px] text-slate-400"
+          >
+            <input
+              type="text"
+              name="card_title"
+              className="w-full mb-1 px-3 py-2 rounded-lg outline-0 bg-white "
+            />
             <div className="flex items-center">
               <select name="priority" className="text-[13px] outline-0">
                 <option value="low">Low priority</option>
@@ -282,32 +454,27 @@ export function Column({ column, user_id, active_id}: { column: ColumnWithCards,
               </select>
               <Popover>
                 <PopoverTrigger asChild>
-                  <button
-                    className="inline-flex items-center gap-2 whitespace-nowrap rounded-md transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-9 px-4 py-2 has-[>svg]:px-3 text-sm bg-transparent hover:bg-transparent border-0 justify-between text-left font-normal"
-                  >
-                    {date
-                      ? (
-                          <span className="flex hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer items-center gap-2">
-                            <TbCalendarDue />
-                            {format(date, 'MMM dd')}
-                          </span>
-                        )
-                      : (
-                          <span className="text-2xl hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer">
-                            <TbCalendarDue />
-                          </span>
-                        )}
+                  <button className="inline-flex items-center gap-2 whitespace-nowrap rounded-md transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-9 px-4 py-2 has-[>svg]:px-3 text-sm bg-transparent hover:bg-transparent border-0 justify-between text-left font-normal">
+                    {date ? (
+                      <span className="flex hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer items-center gap-2">
+                        <TbCalendarDue />
+                        {format(date, 'MMM dd')}
+                      </span>
+                    ) : (
+                      <span className="text-2xl hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer">
+                        <TbCalendarDue />
+                      </span>
+                    )}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     disabled={(date) => {
-                      const daysdiff = differenceInDays(date, new Date())
-                      if (daysdiff < 0)
-                        return true
+                      const daysdiff = differenceInDays(date, new Date());
+                      if (daysdiff < 0) return true;
 
-                      return false
+                      return false;
                     }}
                     selected={date}
                     onSelect={setDate}
@@ -317,50 +484,72 @@ export function Column({ column, user_id, active_id}: { column: ColumnWithCards,
               </Popover>
             </div>
             <div className="flex justify-end gap-3">
-              <button type="button" className="w-12 py-1 hover:text-slate-300 text-sm" onClick={() => setIsOpen(false)}>cancel</button>
-              <button className="w-12 hover:text-slate-300 text-sm">create</button>
+              <button
+                type="button"
+                className="w-12 py-1 hover:text-slate-300 text-sm"
+                onClick={() => setIsOpen(false)}
+              >
+                cancel
+              </button>
+              <button className="w-12 hover:text-slate-300 text-sm">
+                create
+              </button>
             </div>
           </form>
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export function Cards({ cards, active_id, column_id }: { cards: Card[] | null; active_id: string | null; column_id: number}) {
+export function Cards({
+  cards,
+  active_id,
+  column_id,
+}: {
+  cards: Card[] | null;
+  active_id: string | null;
+  column_id: number;
+}) {
   // const {setNodeRef: droppableNodeRef} = useDroppable({ id: `column-${column_id}`, data: { type: 'column', column_id } })
-  if(!cards?.length) return 
+  if (!cards?.length) return;
 
-  const active_card = cards.find(card => `card-${card.id}` === active_id)
+  const active_card = cards.find((card) => `card-${card.id}` === active_id);
 
   return (
     <div className="flex-1 space-y-2 overflow-y-auto p-3">
-     <SortableContext items={cards.map(card => `card-${card.id}`)} strategy={verticalListSortingStrategy} >
-              {cards.map((card: Card) => (
-                  <Card card={card} key={card.id} />
-              ))}
-              {active_id && <DragOverlay>
-                {(active_id && active_card) ? <Card card={active_card} /> : null}
-              </DragOverlay>}
+      <SortableContext
+        items={cards.map((card) => `card-${card.id}`)}
+        strategy={verticalListSortingStrategy}
+      >
+        {cards.map((card: Card) => (
+          <Card card={card} key={card.id} />
+        ))}
+        {active_id && (
+          <DragOverlay>
+            {active_id && active_card ? <Card card={active_card} /> : null}
+          </DragOverlay>
+        )}
       </SortableContext>
     </div>
-  )
+  );
 }
 
-export function Card({ card}: { card: Card }) {
-  const formatted_date = format(card.due_date, 'MMM dd')
-  const today = format(new Date(), 'MMM dd')
-  const is_passed = isBefore(formatted_date, today)
-  console.log("is_passed", is_passed)
-  const created_by = card.created_by
+export function Card({ card }: { card: Card }) {
+  const formatted_date = format(card.due_date, 'MMM dd');
+  const today = format(new Date(), 'MMM dd');
+  const is_passed = isBefore(formatted_date, today);
+  console.log('is_passed', is_passed);
+  const created_by = card.created_by;
 
-  const {attributes, listeners, setNodeRef, transform, transition} = useSortable({
-    id: `card-${card.id}`,
-    data: {
-      type: 'card',
-      column_id: card.column_id,
-    }
-  });
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: `card-${card.id}`,
+      data: {
+        type: 'card',
+        column_id: card.column_id,
+      },
+    });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -370,7 +559,7 @@ export function Card({ card}: { card: Card }) {
   const { data: user, isPending } = useQuery({
     queryKey: ['created_by', card.id],
     queryFn: async () => get_user(created_by),
-  })
+  });
 
   return (
     <div
@@ -382,63 +571,94 @@ export function Card({ card}: { card: Card }) {
       className="group cursor-pointer rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm hover:border-emerald-400/50 hover:bg-slate-900 transition flex flex-col gap-2"
     >
       <div className="flex justify-between font-medium text-slate-100">
-        <span>
-          {card.title}
-        </span>
-        <span className={`text-[11px] ${card.priority === 'low' ? 'text-emerald-400' : card.priority === 'normal' ? 'text-slate-400' : 'text-red-400'}`}>
-          priority:
-          {' '}
-          {card.priority}
+        <span>{card.title}</span>
+        <span
+          className={`text-[11px] ${card.priority === 'low' ? 'text-emerald-400' : card.priority === 'normal' ? 'text-slate-400' : 'text-red-400'}`}
+        >
+          priority: {card.priority}
         </span>
       </div>
       <div className="flex justify-between items-center text-slate-400">
-        <div className={`flex gap-2 items-center ${is_passed ? 'text-red-400 border border-red-400 px-2 py-0.5 rounded-sm' : ''}`}>
+        <div
+          className={`flex gap-2 items-center ${is_passed ? 'text-red-400 border border-red-400 px-2 py-0.5 rounded-sm' : ''}`}
+        >
           <span>
             {!is_passed && <TbCalendarDue />}
-            {is_passed && <TriangleAlert size={16} color='#ff6467' />}
+            {is_passed && <TriangleAlert size={16} color="#ff6467" />}
           </span>
-          due:
-          {' '}
-          {formatted_date}
+          due: {formatted_date}
         </div>
-        <div>{isPending ? <p>loading..</p> : user?.image ? <img src={user.image} className="w-6 h-6 rounded-full" /> : <div className="w-6 h-6 rounded-full bg-slate-400 text-black flex justify-center items-center text-lg font-semibold">{user.name.slice(0, 1)}</div>}</div>
+        <div>
+          {isPending ? (
+            <p>loading..</p>
+          ) : user?.image ? (
+            <img src={user.image} className="w-6 h-6 rounded-full" />
+          ) : (
+            <div className="w-6 h-6 rounded-full bg-slate-400 text-black flex justify-center items-center text-lg font-semibold">
+              {user.name.slice(0, 1)}
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  )
+  );
 }
 
-export function MembersDropdown({ organization_members, organization_id, sender_id }: { organization_members: OrgMemberForDropdown[], organization_id: number, sender_id: number}) {
-  const [isOpen, setIsOpen] = useState<boolean>()
-  const [error, setError] = useState()
-  const router = useRouter()
-  const queryClient = useQueryClient()
+export function MembersDropdown({
+  organization_members,
+  organization_id,
+  sender_id,
+}: {
+  organization_members: OrgMemberForDropdown[];
+  organization_id: number;
+  sender_id: number;
+}) {
+  const [isOpen, setIsOpen] = useState<boolean>();
+  const [error, setError] = useState();
+  const router = useRouter();
+  const queryClient = useQueryClient();
 
-  const authenticated_member = organization_members?.find(member => member.user.id === sender_id)
-  const can_send_invite = authenticated_member?.role === 'admin' ? true : authenticated_member?.role === 'owner' ? true : false; 
+  const authenticated_member = organization_members?.find(
+    (member) => member.user.id === sender_id
+  );
+  const can_send_invite =
+    authenticated_member?.role === 'admin'
+      ? true
+      : authenticated_member?.role === 'owner'
+        ? true
+        : false;
 
   async function handle_send_invite(formData: FormData) {
-    const email = formData.get('email') as string
-    const role = formData.get('role') as string
-    console.log("role", role)
-    const inviteDTO = { email, org_id: organization_id, sender_id, role }
-    const result = await send_organization_invite(inviteDTO)
-    if (!result.ok) return setError(result.error)
-    setIsOpen(false)
-    toast('Invite has been sent.')
-    socket.emit('invite_send', result.data)
- }
+    const email = formData.get('email') as string;
+    const role = formData.get('role') as string;
+    console.log('role', role);
+    const inviteDTO = { email, org_id: organization_id, sender_id, role };
+    const result = await send_organization_invite(inviteDTO);
+    if (!result.ok) return setError(result.error);
+    setIsOpen(false);
+    toast('Invite has been sent.');
+    socket.emit('invite_send', result.data);
+  }
 
- useEffect(function() {
-  socket.on('invite_new', () => {
-    queryClient.invalidateQueries({queryKey: ['organization_invites', sender_id]})
-  } )
- }, [router, queryClient, sender_id])
+  useEffect(
+    function () {
+      socket.on('invite_new', () => {
+        queryClient.invalidateQueries({
+          queryKey: ['organization_invites', sender_id],
+        });
+      });
+    },
+    [router, queryClient, sender_id]
+  );
 
- useEffect(function() {
-  socket.on('invite_answer_new', () => {
-    router.refresh()
-  })
- }, [router])
+  useEffect(
+    function () {
+      socket.on('invite_answer_new', () => {
+        router.refresh();
+      });
+    },
+    [router]
+  );
 
   return (
     <>
@@ -449,89 +669,147 @@ export function MembersDropdown({ organization_members, organization_id, sender_
         <DropdownMenuContent className="w-52 mr-4 bg-slate-900 text-slate-400 border border-slate-400">
           <DropdownMenuGroup className="bg-transparent hover:bg-transparent ">
             <DropdownMenuLabel>Members</DropdownMenuLabel>
-            {organization_members?.map(member => <DropdownMenuItem className="bg-transparent hover:bg-transparent" key={member.id}>{member.user.name}</DropdownMenuItem>)}
-            <Button onClick={() => setIsOpen(true)} className="text-slate-300 border-t border-slate-400 rounded-none w-full bg-slate-900 hover:bg-slate-800 cursor-pointer">Invite new member</Button>
+            {organization_members?.map((member) => (
+              <DropdownMenuItem
+                className="bg-transparent hover:bg-transparent"
+                key={member.id}
+              >
+                {member.user.name}
+              </DropdownMenuItem>
+            ))}
+            <Button
+              onClick={() => setIsOpen(true)}
+              className="text-slate-300 border-t border-slate-400 rounded-none w-full bg-slate-900 hover:bg-slate-800 cursor-pointer"
+            >
+              Invite new member
+            </Button>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
       <Dialog open={isOpen}>
         <DialogContent className="sm:max-w-sm bg-slate-900 text-slate-300 border border-slate-600">
-         {!can_send_invite && <div>
-         <h3>
-           Only admins and owners are allowed to invite new users.
-         </h3>
-         <p>your role: {authenticated_member?.role}</p>
-          </div>}
-         {can_send_invite && <form action={handle_send_invite} className="flex flex-col gap-4">
-            <DialogHeader>
-              <DialogTitle>Add people</DialogTitle>
-            </DialogHeader>
+          {!can_send_invite && (
             <div>
-              <label className="block mb-1" htmlFor="name-1">Email address</label>
-              <input id="name-1" type="email" name="email" placeholder="johndoe@gmail.com" className="mb-1 border border-slate-300 px-2 py-1 w-full outline-slate-300 rounded-sm" />
-              <span className='text-slate-400'>role:</span>
-              <select name="role" className='outline-0 text-slate-400'>
-                <option value="member">member</option>
-                <option value="admin">admin</option>
-              </select>
-              {error && <p className="text-red-600 text-sm font-semibold">{error}</p>}
+              <h3>Only admins and owners are allowed to invite new users.</h3>
+              <p>your role: {authenticated_member?.role}</p>
             </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button className="bg-transparent text-slate-300 cursor-pointer" onClick={() => setIsOpen(false)}>Cancel</Button>
-              </DialogClose>
-              <Button type="submit" className="bg-slate-300 hover:bg-slate-400 cursor-pointer text-black font-semibold px-4 py-2 rounded-md">Add</Button>
-            </DialogFooter>
-          </form>}
+          )}
+          {can_send_invite && (
+            <form action={handle_send_invite} className="flex flex-col gap-4">
+              <DialogHeader>
+                <DialogTitle>Add people</DialogTitle>
+              </DialogHeader>
+              <div>
+                <label className="block mb-1" htmlFor="name-1">
+                  Email address
+                </label>
+                <input
+                  id="name-1"
+                  type="email"
+                  name="email"
+                  placeholder="johndoe@gmail.com"
+                  className="mb-1 border border-slate-300 px-2 py-1 w-full outline-slate-300 rounded-sm"
+                />
+                <span className="text-slate-400">role:</span>
+                <select name="role" className="outline-0 text-slate-400">
+                  <option value="member">member</option>
+                  <option value="admin">admin</option>
+                </select>
+                {error && (
+                  <p className="text-red-600 text-sm font-semibold">{error}</p>
+                )}
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button
+                    className="bg-transparent text-slate-300 cursor-pointer"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="submit"
+                  className="bg-slate-300 hover:bg-slate-400 cursor-pointer text-black font-semibold px-4 py-2 rounded-md"
+                >
+                  Add
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
 
 export function ProfileDropdown({ user }: { user: User }) {
- const router = useRouter()
- const {data: invites, isPending} = useQuery({
+  const router = useRouter();
+  const { data: invites, isPending } = useQuery({
     queryKey: ['organization_invites', user.id],
-    queryFn: async () => get_organization_invites_of_member(user.id)
-  })
-console.log("invites", invites)
-const pending_invites = invites?.length && invites?.filter((invite: Invite)  => invite.status === 'pending') 
+    queryFn: async () => get_organization_invites_of_member(user.id),
+  });
+  console.log('invites', invites);
+  const pending_invites =
+    invites?.length &&
+    invites?.filter((invite: Invite) => invite.status === 'pending');
 
-async function handle_logout() {
-  await logout()
-  router.refresh()
-}
+  async function handle_logout() {
+    await logout();
+    router.refresh();
+  }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button>
-          {user.image ? <img src={user.image} className="cursor-pointer w-8 h-8 rounded-full" /> : <div className="cursor-pointer w-8 text-center rounded-full flex items-center justify-center text-xl font-semibold bg-slate-400">{user.name.slice(0, 1)}</div>}
+          {user.image ? (
+            <img
+              src={user.image}
+              className="cursor-pointer w-8 h-8 rounded-full"
+            />
+          ) : (
+            <div className="cursor-pointer w-8 text-center rounded-full flex items-center justify-center text-xl font-semibold bg-slate-400">
+              {user.name.slice(0, 1)}
+            </div>
+          )}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-slate-900 text-slate-400">
         <DropdownMenuItem>
-          <Link href="/account/profile" className="flex gap-2 items-center w-full h-full">
+          <Link
+            href="/account/profile"
+            className="flex gap-2 items-center w-full h-full"
+          >
             <UserIcon />
             Profile
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Link href="/account/invites" className="flex gap-2 items-center w-full h-full">
+          <Link
+            href="/account/invites"
+            className="flex gap-2 items-center w-full h-full"
+          >
             <FcInvite />
-           <span> Invites </span>
-            {pending_invites?.length > 0 && <span className='border border-slate-400 rounded-full px-2'>{pending_invites?.length}</span>}
+            <span> Invites </span>
+            {pending_invites?.length > 0 && (
+              <span className="border border-slate-400 rounded-full px-2">
+                {pending_invites?.length}
+              </span>
+            )}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive">
-          <button onClick={handle_logout} className='w-full h-full flex items-center gap-2'>
+          <button
+            onClick={handle_logout}
+            className="w-full h-full flex items-center gap-2"
+          >
             <LogOutIcon />
             Log out
           </button>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

@@ -1,49 +1,87 @@
-"use client"
+'use client';
 
-import { create_board } from "@/helpers/board"
-import { socket } from "@/helpers/socket"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { create_board } from '@/helpers/board';
+import { socket } from '@/helpers/socket';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Plus, X } from 'lucide-react';
 
-export function CreateNewBoard({ organization_id }: { organization_id: number}) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [error, setError] = useState<null | string>(null)
-  const router = useRouter()
-  console.log("orgid", organization_id)
+export function CreateNewBoard({
+  organization_id,
+}: {
+  organization_id: number;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState<null | string>(null);
+  const router = useRouter();
+  console.log('orgid', organization_id);
 
   async function handle_create_board(formData: FormData) {
-        // setError(null)
-        const board_title = formData.get('board_title') as string
-        if(!board_title?.length) return
-        const result = await create_board({ board_title, organization_id })
-        router.refresh()
-        if(result.ok) {
-            socket.emit('board_create', organization_id )
-        }
-        // if(!result.ok) setError(result.error)
+    // setError(null)
+    const board_title = formData.get('board_title') as string;
+    if (!board_title?.length) return;
+    const result = await create_board({ board_title, organization_id });
+    router.refresh();
+    if (result.ok) {
+      socket.emit('board_create', organization_id);
+      setIsOpen(false);
     }
+    // if(!result.ok) setError(result.error)
+  }
 
-    useEffect(function() {
-        socket.on('board_new', () => {
-            router.refresh()
-        })
-    }, [router])
+  useEffect(
+    function () {
+      socket.on('board_new', () => {
+        router.refresh();
+      });
+    },
+    [router]
+  );
 
-
-  return <div>
+  return (
+    <div>
       {!isOpen && (
-        <button onClick={() => setIsOpen(true)} className="rounded-sm ml-2 border border-slate-700 px-3 py-1 text-base cursor-pointer text-slate-300 hover:border-slate-500 hover:text-slate-100 transition">
+        <Button
+          onClick={() => setIsOpen(true)}
+          variant="outline"
+          size="sm"
+          className="gap-2 ml-2 bg-slate-900 hover:bg-slate-950 text-slate-300 hover:text-slate-300 cursor-pointer border-slate-400"
+        >
+          <Plus size={16} />
           Create new board
-        </button>
+        </Button>
       )}
-  {isOpen && <form action={handle_create_board}>
-    <div className="mb-2">
-      <input type="text" name="board_title" className="bg-white rounded-md px-4 py-2 border border-slate-600 outline-0 text-slate-800" />
+      {isOpen && (
+        <form action={handle_create_board} className="flex flex-col gap-2">
+          <Input
+            name="board_title"
+            placeholder="Enter board name..."
+            className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500"
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-slate-400 hover:text-slate-100 hover:bg-transparent cursor-pointer"
+              onClick={() => setIsOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+            >
+              Create
+            </Button>
+          </div>
+          {error && <p className="text-red-400 text-sm">{error}</p>}
+        </form>
+      )}
     </div>
-    <div className="flex gap-1 justify-end">
-      <button type="button" className="bg-red-600 rounded-sm px-2 py-1 cursor-pointer" onClick={() => setIsOpen(false)}>cancel</button>
-      <button className="bg-emerald-600 rounded-sm px-2 py-1 cursor-pointer">create column</button>
-    </div>
-  </form>}
-  </div>
+  );
 }
