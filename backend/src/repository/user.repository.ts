@@ -19,5 +19,8 @@ async function update_user_image(DTO: {user_id: number; image: string}) {
    return await db.update(users).set({ image: DTO.image }).where(eq(users.id, DTO.user_id))
 }
 
+async function update_user_name(DTO: { user_id: number; name: string }) {
+   return await db.update(users).set({ name: DTO.name }).where(eq(users.id, DTO.user_id))
+}
 
-export const user_repository = { get_user_by_email, add_user, get_user_by_id, update_user_image }
+export const user_repository = { get_user_by_email, add_user, get_user_by_id, update_user_image, update_user_name }

@@ -10,4 +10,8 @@ async function update_user_image(DTO: { user_id: number; image: string }) {
    return await user_repository.update_user_image(DTO)
 }
 
-export const user_service = { get_user, update_user_image }
+async function update_user_name(DTO: {user_id: number; name: string}) {
+   return await user_repository.update_user_name(DTO)
+}
+
+export const user_service = { get_user, update_user_image, update_user_name }
