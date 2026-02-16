@@ -2,8 +2,8 @@
 
 import type { Card, ColumnWithCards, Invite, OrgMemberForDropdown, User } from '@/types'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { differenceInDays, format } from 'date-fns'
-import { LogOutIcon, UserIcon } from 'lucide-react'
+import { differenceInDays, format, isBefore } from 'date-fns'
+import { LogOutIcon, TriangleAlert, UserIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -46,6 +46,8 @@ import { CSS } from "@dnd-kit/utilities"
 import { horizontalListSortingStrategy, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { logout } from '@/app/(auth)/actions'
 import { socket } from '@/helpers/socket'
+import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '@/components/ui/combobox'
+import { get_members_of_organization } from '@/helpers/organization_member'
 
 interface PropTypes {
   board_id: number
@@ -173,7 +175,7 @@ export function Columns({ columns, board_id, organization_id, user_id}: { column
   }, [router])
 
   return (
-    <div className="flex gap-4 p-6 overflow-hidden">
+    <div className="flex gap-4 p-6 ">
       <DndContext onDragStart={handle_drag_start} onDragEnd={handle_drag_end} sensors={sensors}>
         <SortableContext items={columns?.map(column => `column-${column.id}`)} strategy={horizontalListSortingStrategy}>
           {columns?.length && columns.map((column: ColumnWithCards) => (
@@ -198,6 +200,11 @@ export function Column({ column, user_id, active_id}: { column: ColumnWithCards,
   const last_position = column.cards.at(-1)?.position ?? -1
 
   const formatted_date = date && format(date, 'yyyy-MM-dd')
+
+  const {data: users, isPending} = useQuery({
+    queryKey: ['members_of_organization', column.org_id ],
+    queryFn: async () => await get_members_of_organization(column.org_id)
+  })
 
   const {
     attributes,
@@ -230,6 +237,7 @@ export function Column({ column, user_id, active_id}: { column: ColumnWithCards,
     }
   }
 
+
   useEffect(function() {
     socket.on('card_new', () => {
       router.refresh()
@@ -255,7 +263,7 @@ export function Column({ column, user_id, active_id}: { column: ColumnWithCards,
           </span>
         </div>
       {/* Cards container */}
-      <Cards cards={column.cards} active_id={active_id} column_id={column.id} />
+      <Cards cards={column.cards} active_id={active_id} column_id={column.id} organization_id={column.org_id} />
       {/* Add card button */}
       <div className="border-t border-slate-800 p-3">
         {!isOpen && (
@@ -266,7 +274,7 @@ export function Column({ column, user_id, active_id}: { column: ColumnWithCards,
         {isOpen && (
           <form action={handle_create_card} className="w-full text-[11px] text-slate-400">
             <input type="text" name="card_title" className="w-full mb-1 px-3 py-2 rounded-lg outline-0 bg-white " />
-            <div className="flex items-center gap-4">
+            <div className="flex items-center">
               <select name="priority" className="text-[13px] outline-0">
                 <option value="low">Low priority</option>
                 <option value="normal">Normal priority</option>
@@ -319,11 +327,12 @@ export function Column({ column, user_id, active_id}: { column: ColumnWithCards,
   )
 }
 
-export function Cards({ cards, active_id, column_id }: { cards: Card[] | null; active_id: string | null; column_id: number }) {
+export function Cards({ cards, active_id, column_id }: { cards: Card[] | null; active_id: string | null; column_id: number}) {
   // const {setNodeRef: droppableNodeRef} = useDroppable({ id: `column-${column_id}`, data: { type: 'column', column_id } })
   if(!cards?.length) return 
 
   const active_card = cards.find(card => `card-${card.id}` === active_id)
+
   return (
     <div className="flex-1 space-y-2 overflow-y-auto p-3">
      <SortableContext items={cards.map(card => `card-${card.id}`)} strategy={verticalListSortingStrategy} >
@@ -340,6 +349,9 @@ export function Cards({ cards, active_id, column_id }: { cards: Card[] | null; a
 
 export function Card({ card}: { card: Card }) {
   const formatted_date = format(card.due_date, 'MMM dd')
+  const today = format(new Date(), 'MMM dd')
+  const is_passed = isBefore(formatted_date, today)
+  console.log("is_passed", is_passed)
   const created_by = card.created_by
 
   const {attributes, listeners, setNodeRef, transform, transition} = useSortable({
@@ -367,28 +379,23 @@ export function Card({ card}: { card: Card }) {
       {...attributes}
       {...listeners}
       style={style}
-      className="group cursor-pointer rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm hover:border-emerald-400/50 hover:bg-slate-900 transition"
+      className="group cursor-pointer rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm hover:border-emerald-400/50 hover:bg-slate-900 transition flex flex-col gap-2"
     >
       <div className="flex justify-between font-medium text-slate-100">
         <span>
           {card.title}
         </span>
-        <span className="text-[11px] text-slate-400">
+        <span className={`text-[11px] ${card.priority === 'low' ? 'text-emerald-400' : card.priority === 'normal' ? 'text-slate-400' : 'text-red-400'}`}>
           priority:
           {' '}
           {card.priority}
         </span>
       </div>
-      {card.description && (
-        <div className="mt-1 text-[11px] text-slate-400">
-          {card.description}
-        </div>
-      )}
-
       <div className="flex justify-between items-center text-slate-400">
-        <div className="flex gap-2 items-center">
+        <div className={`flex gap-2 items-center ${is_passed ? 'text-red-400 border border-red-400 px-2 py-0.5 rounded-sm' : ''}`}>
           <span>
-            <TbCalendarDue />
+            {!is_passed && <TbCalendarDue />}
+            {is_passed && <TriangleAlert size={16} color='#ff6467' />}
           </span>
           due:
           {' '}
@@ -528,4 +535,3 @@ async function handle_logout() {
     </DropdownMenu>
   )
 }
-

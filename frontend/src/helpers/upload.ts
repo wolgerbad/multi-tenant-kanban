@@ -1,0 +1,20 @@
+export async function create_image_url(image: File) {
+    const res = await fetch('http://localhost:8000/upload/image/create-url', {
+      method: 'POST',
+      body: JSON.stringify({file_type: image.type, file_name: image.name}),
+      headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      return await res.json()
+}
+
+export async function upload_image_to_bucket(signed_url: string, image: File) {
+   return await fetch(signed_url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': image.type
+        },
+        body: image
+      })
+}

@@ -9,7 +9,8 @@ import { socket } from '@/helpers/socket'
 import { Camera, CloudUpload, Upload, UserPen } from 'lucide-react'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { update_user_name } from '@/helpers/user'
+import { update_user_image, update_user_name } from '@/helpers/user'
+import { create_image_url, upload_image_to_bucket } from '@/helpers/upload'
 
 export function ProfileForm({ user }: { user: User }) {
   const router = useRouter()
@@ -91,7 +92,6 @@ export function UserImage({user}: {user: User}) {
   </div>
   <p className="text-xs text-slate-400">Profile picture</p>
 </div>
-
 }
 
 export function UploadDialog({ user_id, children }: { user_id: number; children: React.ReactNode }) {
@@ -103,35 +103,19 @@ export function UploadDialog({ user_id, children }: { user_id: number; children:
     const image = formData.get('image') as File;
     if(image?.size > 2097151) return setError('Image size should be less than 2MB.')
     if(!image?.type.startsWith('image')) return setError('Invalid file. Please upload an image.')
-    // console.log('image', image)
-    const result = await fetch('http://localhost:8000/upload/image/create-url', {
-      method: 'POST',
-      body: JSON.stringify({file_type: image.type, file_name: image.name}),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(res => res.json())
+
+    const result = await create_image_url(image)
 
     if(!result.ok) return setError('Error occured while uploading! Try again later.')
 
-   const res = await fetch(result.data.signed_url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': image.type
-      },
-      body: image
-    })
+    const res = await upload_image_to_bucket(result.data.signed_url, image)
     if(!res.ok) return setError('Error occured while uploading! Try again later.')
 
     const final_url = result.data.final_url
 
-    await fetch('http://localhost:8000/user/update/image', {
-      method: 'POST',
-      body: JSON.stringify({ user_id, image: final_url }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
+    const update_result = await update_user_image(user_id, final_url)
+    if(!update_result.ok) return setError(update_result.message)
+
     setIsOpen(false)
     router.refresh()
   }
