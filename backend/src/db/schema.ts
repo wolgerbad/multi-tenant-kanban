@@ -13,7 +13,8 @@ export const organization_relations = relations(organization, ({ many }) => ({
     board: many(board),
     column: many(column),
     card: many(card),
-    organization_invite: many(organization_invite)
+    organization_invite: many(organization_invite),
+    card_comment: many(card_comment)
 }))
 
 export type Organization = typeof organization.$inferSelect;
@@ -30,7 +31,8 @@ export const users = mysqlTable('users', {
 export const users_relations = relations(users, ({ many }) => ({
     organization_member: many(organization_member),
     card: many(card),
-    organization_invite: many(organization_invite)
+    organization_invite: many(organization_invite),
+    card_comment: many(card_comment)
 }))
 
 export type User = typeof users.$inferSelect;
@@ -109,7 +111,7 @@ export const card = mysqlTable('card' , {
     created_at: timestamp({mode: 'string'}).defaultNow()
 })
 
-export const card_relations = relations(card, ({ one }) => ({
+export const card_relations = relations(card, ({ one, many }) => ({
     users: one(users, {
         fields: [card.created_by],
         references: [users.id]
@@ -121,10 +123,37 @@ export const card_relations = relations(card, ({ one }) => ({
     organization: one(organization, {
         fields: [card.org_id],
         references: [organization.id]
-    })
+    }),
+    card_comment: many(card_comment)
 }))
 
 export type Card = typeof card.$inferSelect;
+
+export const card_comment = mysqlTable('card_comment', {
+    id: int().primaryKey().notNull().autoincrement(),
+    comment: text().notNull(),
+    sender_id: int().notNull().references(() => users.id),
+    card_id: int().notNull().references(() => card.id, { onDelete: 'cascade' }),
+    org_id: int().notNull().references(() => organization.id, { onDelete: 'cascade' }),
+    created_at: timestamp({mode: 'string'}).defaultNow()
+})
+
+export type CardComment = typeof card_comment.$inferSelect;
+
+export const card_comment_relations = relations(card_comment, ({ one }) => ({
+    sender_id: one(users, {
+        fields: [card_comment.sender_id],
+        references: [users.id]
+    }),
+    card_id: one(card, {
+      fields: [card_comment.card_id],
+      references: [card.id]  
+    }),
+    org_id: one(organization, {
+        fields: [card_comment.org_id],
+        references: [organization.id]
+    })
+}))
 
 export const organization_invite = mysqlTable('organization_invite', {
     id: int().primaryKey().notNull().autoincrement(),

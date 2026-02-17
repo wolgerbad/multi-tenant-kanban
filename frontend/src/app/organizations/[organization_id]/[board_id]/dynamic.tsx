@@ -8,11 +8,11 @@ import type {
   User,
 } from '@/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { differenceInDays, format, isBefore } from 'date-fns';
-import { LogOutIcon, TriangleAlert, UserIcon, Plus, X } from 'lucide-react';
+import { differenceInDays, format, formatDistanceToNow, isBefore } from 'date-fns';
+import { LogOutIcon, TriangleAlert, UserIcon, Plus, X, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { FcInvite } from 'react-icons/fc';
 import { IoMdArrowDropdown } from 'react-icons/io';
 import { TbCalendarDue, TbOvalVerticalFilled } from 'react-icons/tb';
@@ -22,9 +22,11 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -84,6 +86,7 @@ import {
 } from '@/components/ui/combobox';
 import { get_members_of_organization } from '@/helpers/organization_member';
 import { Input } from '@/components/ui/input';
+import { create_card_comment, get_card_comments } from '@/helpers/card_comment';
 
 interface PropTypes {
   board_id: number;
@@ -425,6 +428,7 @@ export function Column({
         active_id={active_id}
         column_id={column.id}
         organization_id={column.org_id}
+        user_id={user_id}
       />
       {/* Add card button */}
       <div className="border-t border-slate-800 p-3">
@@ -505,11 +509,11 @@ export function Column({
 export function Cards({
   cards,
   active_id,
-  column_id,
+  user_id,
 }: {
   cards: Card[] | null;
   active_id: string | null;
-  column_id: number;
+  user_id: number;
 }) {
   // const {setNodeRef: droppableNodeRef} = useDroppable({ id: `column-${column_id}`, data: { type: 'column', column_id } })
   if (!cards?.length) return;
@@ -523,11 +527,11 @@ export function Cards({
         strategy={verticalListSortingStrategy}
       >
         {cards.map((card: Card) => (
-          <Card card={card} key={card.id} />
+          <Card card={card} key={card.id} user_id={user_id} />
         ))}
         {active_id && (
           <DragOverlay>
-            {active_id && active_card ? <Card card={active_card} /> : null}
+            {active_id && active_card ? <Card card={active_card} user_id={user_id} /> : null}
           </DragOverlay>
         )}
       </SortableContext>
@@ -535,7 +539,9 @@ export function Cards({
   );
 }
 
-export function Card({ card }: { card: Card }) {
+export function Card({ card, user_id }: { card: Card; user_id: number }) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+
   const formatted_date = format(card.due_date, 'MMM dd');
   const today = format(new Date(), 'MMM dd');
   const is_passed = isBefore(formatted_date, today);
@@ -563,6 +569,7 @@ export function Card({ card }: { card: Card }) {
 
   return (
     <div
+      onClick={() => setIsDialogOpen(true)}
       key={card.id}
       ref={setNodeRef}
       {...attributes}
@@ -600,8 +607,100 @@ export function Card({ card }: { card: Card }) {
           )}
         </div>
       </div>
+      <CardDetailsDropdown isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} card={card} user_id={user_id} />
     </div>
   );
+}
+
+export function CardDetailsDropdown({isOpen, onOpenChange, card, user_id}: { isOpen: boolean; onOpenChange: Dispatch<SetStateAction<boolean>>; card: Card; user_id: number }) {
+  const [is_editing_title, set_is_editing_title] = useState(false)
+  const [is_editing_description, set_is_editing_description] = useState(false)
+  const [error, setError] = useState<null | string>(null)
+  const queryClient = useQueryClient()
+  const router = useRouter()
+
+  const {data: user, isPending} = useQuery({ 
+    queryKey: ['user', user_id],
+    queryFn: async () => await get_user(user_id)
+   })
+
+   const {data: card_comments, isPending: comments_pending} = useQuery({
+    queryKey: ['card_comments', card.id],
+    queryFn: async () => await get_card_comments(card.id)
+   })
+
+   async function handle_create_card_comment(formData: FormData) {
+      setError(null)
+      const comment = formData.get('comment') as string
+      if(!comment.trim().length) return;
+      const result = await create_card_comment({ sender_id: user_id, comment, card_id: card.id, org_id: card.org_id })
+      if(!result.ok) setError(result.error)
+        
+      queryClient.invalidateQueries({queryKey: ['card_comments', card.id]})
+   }
+
+
+return <Dialog open={isOpen} onOpenChange={onOpenChange} >
+    <DialogContent className="sm:max-w-lg bg-slate-800 text-white">
+      <DialogHeader className='flex flex-col'>
+        {is_editing_title && <> 
+        <input type='text' defaultValue={card.title} className='h-full w-full p-2 text-lg font-semibold outline-0 border-2 border-slate-600' autoFocus onBlur={() => set_is_editing_title(false)}/>
+        <div className='self-end flex gap-2 items-center'>
+          <button className='border-2 p-2 border-slate-400 rounded-xs hover:bg-slate-500/60 cursor-pointer'>
+            <X size={18} color='#90a1b9' style={{ fontWeight: 'bold' }} />
+          </button>
+          <button className='border-2 border-slate-400 p-2 rounded-xs hover:bg-slate-500/60 cursor-pointer '>
+            <Check size={18} color='#90a1b9' />
+          </button>
+        </div>
+        </>
+        }
+        {!is_editing_title && <DialogTitle onClick={() => set_is_editing_title(true)} className='h-full p-2 hover:bg-slate-400 transition-all ease duration-75'>{card.title}</DialogTitle>}
+      </DialogHeader>
+      <div className='p-2'>
+        <h2 className='mb-1 font-semibold'>Description</h2>
+        {is_editing_description && <> 
+        <textarea className='w-full border rounded-xs p-4 outline-0 mb-2' autoFocus rows={3} onBlur={() => set_is_editing_description(false)} placeholder='Add your description here...'/>
+        <div className='flex gap-2 items-center'>
+          <button className='bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-xs font-semibold cursor-pointer'>Save</button>
+          <button className='cursor-pointer font-semibold hover:bg-slate-500/60 px-2 py-1 rounded-xs'>Cancel</button>
+        </div>
+         </>}
+        {!is_editing_description && <div onClick={() => set_is_editing_description(true)} className='text-slate-400 hover:bg-slate-400/40 transition-all ease duration-75 py-2'>Add a description...</div>}
+      </div>
+
+      <div className='p-2'>
+        <h2 className='font-semibold mb-2'>Comments</h2>
+       <form action={handle_create_card_comment}>
+          <div className='flex gap-2 '>
+            <div>{isPending ? 'loading' : user?.image ? <img src={user.image} className='w-8 h-8 rounded-full' /> : <div className='w-8 h-8 rounded-full font-semibold flex justify-center items-center'>{user.name.slice(0,1)}</div>}</div>
+            <div className='flex-1'>
+            <textarea name='comment' className='w-full border rounded-xs px-4 py-2 outline-0 mb-1' autoFocus rows={2} placeholder='Add a comment'/>
+          <div className='flex gap-2 items-center'>
+            <button className='bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-xs font-semibold cursor-pointer'>Save</button>
+            <button type='button' className='cursor-pointer font-semibold hover:bg-slate-500/60 px-2 py-1 rounded-xs'>Cancel</button>
+          </div>
+            </div>
+          </div>
+        </form> 
+      </div>
+      <div className='max-h-48 overflow-y-scroll'>
+        {card_comments?.length && card_comments.map(comment => (
+          <div key={comment.comment.id} className='p-2'>
+            <div className='flex gap-2 '>
+              <div className=''>{isPending ? 'loading' : user?.image ? <img src={user.image} className='w-8 h-8 rounded-full' /> : <div className='w-8 h-8 rounded-full font-semibold flex justify-center items-center'>{user.name.slice(0,1)}</div>}</div>
+              <div className='self-start'>
+                <h3 className='font-semibold'>{comment.user.name}</h3>
+                <p className='text-xs text-slate-300 mb-2'>{formatDistanceToNow(comment.comment.created_at)} ago</p>
+               <div className='text-slate-200'>{comment.comment.comment}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </DialogContent>
+  
+</Dialog>
 }
 
 export function MembersDropdown({

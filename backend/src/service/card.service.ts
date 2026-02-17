@@ -1,5 +1,6 @@
 import { Card } from "../db/schema.js";
 import { card_repository } from "../repository/card.repository.js";
+import { card_comment_repository } from "../repository/card_comment.repository.js";
 
 async function create_card(cardDTO: Card) {
     return await card_repository.create_card(cardDTO)
@@ -18,4 +19,15 @@ async function switch_card_column(DTO: { card_id: number; column_id: number; }) 
     return card_repository.switch_card_column({...DTO, position: last_card_position ? last_card_position + 1 : 0})
 }
 
-export const card_service = { create_card, switch_card_positions, switch_card_column }
+async function get_card_comments(card_id: number) {
+    const result = await card_comment_repository.get_card_comments(card_id)
+    if(!result.length) return { ok:false, message: 'No comments found.' }
+
+    return {ok: true, data: result}
+}
+
+async function create_card_comment(DTO: { sender_id: number; card_id: number; org_id: number; comment: string }) {
+   return await card_comment_repository.create_card_comment(DTO)
+}
+
+export const card_service = { create_card, switch_card_positions, switch_card_column, get_card_comments, create_card_comment }
