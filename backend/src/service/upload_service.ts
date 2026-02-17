@@ -14,7 +14,7 @@ async function create_presigned_url(DTO: { file_type: string; file_name: string 
     })
 
    const signed_url = await getSignedUrl(client, putCommand, { expiresIn: 60 } )
-   const final_url = `https://${process.env.AWS_BUCKET_NAME}-bucket.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
+   const final_url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
    return {signed_url, final_url}
 }
 

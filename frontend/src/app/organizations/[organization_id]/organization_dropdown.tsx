@@ -27,8 +27,8 @@ export function OrganizationsDropdown({ organizations, organization_id }: { orga
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-slate-900 text-slate-400 w-60">
         {organizations.map( organization => <DropdownMenuItem key={organization.id}>
-          <Link href={`/organizations/${organization.id}`} className="w-full h-full flex gap-2 items-center">
-            {/* <UserIcon /> */}
+          <Link href={`/organizations/${organization.id}`} className="w-full h-full flex items-center gap-2 items-center">
+            {organization.image ? <img src={organization.image} className='w-4 h-4 object-center rounded-full' /> : <UserIcon />}
             {organization.title}
           </Link>
         </DropdownMenuItem>

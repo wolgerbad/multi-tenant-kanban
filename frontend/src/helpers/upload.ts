@@ -6,7 +6,7 @@ export async function create_image_url(image: File) {
           'Content-Type': 'application/json'
         }
       })
-      return await res.json()
+      return await res.json() as { ok: true; data: { signed_url: string; final_url: string } } | { ok:false; error: string }
 }
 
 export async function upload_image_to_bucket(signed_url: string, image: File) {
