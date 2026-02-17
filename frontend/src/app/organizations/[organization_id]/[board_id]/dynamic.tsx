@@ -632,31 +632,44 @@ export function CardDetailsDropdown({isOpen, onOpenChange, card, user_id}: { isO
     queryFn: async () => await get_card_comments(card.id)
    })
 
+   useEffect(function() {
+    socket.on('card_update_new', () => {
+      console.log('card_update')
+      router.refresh()
+    })
+   }, [router])
+
    async function handle_create_card_comment(formData: FormData) {
       setError(null)
       const comment = formData.get('comment') as string
       if(!comment.trim().length) return;
       const result = await create_card_comment({ sender_id: user_id, comment, card_id: card.id, org_id: card.org_id })
-      if(!result.ok) setError(result.error)
-        
+      if(!result.ok) return setError(result.error)
       queryClient.invalidateQueries({queryKey: ['card_comments', card.id]})
+      socket.emit('card_updated', card.org_id)
    }
 
    async function handle_update_card(type: string) {
     if(type === 'title') {
-      if(!client_card_title.trim().length || card.title === client_card_title) return;
-      await update_card({ title: client_card_title, card_id: card.id })
-      set_is_editing_title(false)
-      router.refresh()
-      return;
-    }
-    if(type === 'description') {
-      if(!client_card_description?.trim().length || card.description === client_card_description) return
-      await update_card({ description: client_card_description, card_id: card.id })
-      router.refresh()
-      return;
+        if(!client_card_title.trim().length || card.title === client_card_title) return;
+        const result = await update_card({ title: client_card_title, card_id: card.id })
+        set_is_editing_title(false)
+      if(result.ok) {
+        router.refresh()
+        socket.emit('card_updated', card.org_id)
+      }
+        return;
     }
 
+    if(type === 'description') {
+      if(!client_card_description?.trim().length || card.description === client_card_description) return
+      const result = await update_card({ description: client_card_description, card_id: card.id })
+      if(result.ok)  {
+        router.refresh()
+        socket.emit('card_updated', card.org_id)
+      }
+      return;
+    }
     return;
    }
 
@@ -711,7 +724,7 @@ return <Dialog open={isOpen} onOpenChange={onOpenChange} >
         {card_comments?.length && card_comments.map(comment => (
           <div key={comment.comment.id} className='p-2'>
             <div className='flex gap-2 '>
-              <div className=''>{isPending ? 'loading' : user?.image ? <img src={user.image} className='w-8 h-8 rounded-full' /> : <div className='w-8 h-8 rounded-full font-semibold flex justify-center items-center'>{user.name.slice(0,1)}</div>}</div>
+              <div className=''>{isPending ? 'loading' : comment.user?.image ? <img src={comment.user.image} className='w-8 h-8 rounded-full' /> : <div className='w-8 h-8 rounded-full font-semibold flex justify-center items-center'>{user.name.slice(0,1)}</div>}</div>
               <div className='self-start'>
                 <h3 className='font-semibold'>{comment.user.name}</h3>
                 <p className='text-xs text-slate-300 mb-2'>{formatDistanceToNow(comment.comment.created_at)} ago</p>

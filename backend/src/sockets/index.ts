@@ -55,24 +55,29 @@ io.on('connection', async (socket) => {
         socket.to(`organization-${organization_id}`).emit('board_new')
     })
 
-    socket.on('column_created', async (organization_id) => {
+    socket.on('column_created', (organization_id) => {
         socket.to(`organization-${organization_id}`).emit('column_new') 
     })
 
-    socket.on('card_created', async (organization_id) => {
+    socket.on('card_created', (organization_id) => {
         socket.to(`organization-${organization_id}`).emit('card_new')
     })
 
-    socket.on('dragndrop_event', async (organization_id) => {
+    socket.on('dragndrop_event', (organization_id) => {
         socket.to(`organization-${organization_id}`).emit('dragndrop_new')
     })
 
-    socket.on('invite_send', async (receiver_id) => {
+    socket.on('invite_send', (receiver_id) => {
         socket.to(`user-${receiver_id}`).emit('invite_new')
     })
 
-    socket.on('invite_answer', async (organization_id) => {
+    socket.on('invite_answer', (organization_id) => {
         socket.to(`organization-${organization_id}`).emit('invite_answer_new')
+    })
+
+    socket.on('card_updated', (organization_id) => {
+        console.log('card_updated')
+        socket.to(`organization-${organization_id}`).emit('card_update_new')
     })
 })
 
