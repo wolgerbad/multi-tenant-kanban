@@ -52,4 +52,14 @@ async function create_card_comment(req: Request, res: Response, next: NextFuncti
     }
 }
 
-export const card_controller = { create_card, switch_card_positions, switch_card_column, get_card_comments, create_card_comment }
+async function update_card(req: Request, res: Response, next: NextFunction) {
+    const { card_id, ...values } = req.body
+    try {
+        await card_service.update_card(card_id, values)    
+        res.json({ ok: true })
+    } catch (error: any) {
+        res.status(500).json({ error: error.message })        
+    }
+}
+
+export const card_controller = { create_card, switch_card_positions, switch_card_column, get_card_comments, create_card_comment, update_card }

@@ -36,3 +36,15 @@ export async function switch_card_column(DTO: { card_id: number; column_id: numb
 
   return await res.json()
 }
+
+export async function update_card(DTO) {
+ const res = await fetch('http://localhost:8000/card/update', {
+    method: 'POST',
+    body: JSON.stringify(DTO),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+
+  return await res.json()
+}

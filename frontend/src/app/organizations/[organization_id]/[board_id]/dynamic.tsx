@@ -47,6 +47,7 @@ import {
   create_card,
   switch_card_column,
   switch_card_positions,
+  update_card,
 } from '@/helpers/card';
 import { create_column, switch_column_positions } from '@/helpers/column';
 import {
@@ -613,6 +614,8 @@ export function Card({ card, user_id }: { card: Card; user_id: number }) {
 }
 
 export function CardDetailsDropdown({isOpen, onOpenChange, card, user_id}: { isOpen: boolean; onOpenChange: Dispatch<SetStateAction<boolean>>; card: Card; user_id: number }) {
+  const [client_card_title, set_client_card_title] = useState(() => card.title)
+  const [client_card_description, set_client_card_description] = useState(() => card.description)
   const [is_editing_title, set_is_editing_title] = useState(false)
   const [is_editing_description, set_is_editing_description] = useState(false)
   const [error, setError] = useState<null | string>(null)
@@ -639,34 +642,55 @@ export function CardDetailsDropdown({isOpen, onOpenChange, card, user_id}: { isO
       queryClient.invalidateQueries({queryKey: ['card_comments', card.id]})
    }
 
+   async function handle_update_card(type: string) {
+    if(type === 'title') {
+      if(!client_card_title.trim().length || card.title === client_card_title) return;
+      await update_card({ title: client_card_title, card_id: card.id })
+      set_is_editing_title(false)
+      router.refresh()
+      return;
+    }
+    if(type === 'description') {
+      if(!client_card_description?.trim().length || card.description === client_card_description) return
+      await update_card({ description: client_card_description, card_id: card.id })
+      router.refresh()
+      return;
+    }
+
+    return;
+   }
+
 
 return <Dialog open={isOpen} onOpenChange={onOpenChange} >
     <DialogContent className="sm:max-w-lg bg-slate-800 text-white">
       <DialogHeader className='flex flex-col'>
         {is_editing_title && <> 
-        <input type='text' defaultValue={card.title} className='h-full w-full p-2 text-lg font-semibold outline-0 border-2 border-slate-600' autoFocus onBlur={() => set_is_editing_title(false)}/>
-        <div className='self-end flex gap-2 items-center'>
+        <input type='text' value={client_card_title} onKeyDown={(e) => {
+          if(e.key === 'Enter') return handle_update_card('title')
+          return
+        }} onChange={(e) => set_client_card_title(e.target.value) } className='h-full w-full p-2 text-lg font-semibold outline-0 border-2 border-slate-600' autoFocus onBlur={() => set_is_editing_title(false)}/>
+        <div data-ignoreBlur='true' className='self-end flex gap-2 items-center'>
           <button className='border-2 p-2 border-slate-400 rounded-xs hover:bg-slate-500/60 cursor-pointer'>
             <X size={18} color='#90a1b9' style={{ fontWeight: 'bold' }} />
           </button>
-          <button className='border-2 border-slate-400 p-2 rounded-xs hover:bg-slate-500/60 cursor-pointer '>
+          <button onMouseDown={() => handle_update_card('title')} className='border-2 border-slate-400 p-2 rounded-xs hover:bg-slate-500/60 cursor-pointer '>
             <Check size={18} color='#90a1b9' />
           </button>
         </div>
         </>
         }
-        {!is_editing_title && <DialogTitle onClick={() => set_is_editing_title(true)} className='h-full p-2 hover:bg-slate-400 transition-all ease duration-75'>{card.title}</DialogTitle>}
+        {!is_editing_title && <DialogTitle onClick={() => set_is_editing_title(true)} className='h-full p-2 hover:bg-slate-400/40 transition-all ease duration-75'>{card.title}</DialogTitle>}
       </DialogHeader>
       <div className='p-2'>
         <h2 className='mb-1 font-semibold'>Description</h2>
-        {is_editing_description && <> 
-        <textarea className='w-full border rounded-xs p-4 outline-0 mb-2' autoFocus rows={3} onBlur={() => set_is_editing_description(false)} placeholder='Add your description here...'/>
+        {is_editing_description && <div> 
+        <textarea className='w-full border rounded-xs p-4 outline-0 mb-2' value={client_card_description} onChange={(e) => set_client_card_description(e.target.value) } autoFocus onBlur={() => set_is_editing_description(false)} rows={3} placeholder='Add your description here...'/>
         <div className='flex gap-2 items-center'>
-          <button className='bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-xs font-semibold cursor-pointer'>Save</button>
+          <button onMouseDown={() => handle_update_card('description')} className='bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-xs font-semibold cursor-pointer'>Save</button>
           <button className='cursor-pointer font-semibold hover:bg-slate-500/60 px-2 py-1 rounded-xs'>Cancel</button>
         </div>
-         </>}
-        {!is_editing_description && <div onClick={() => set_is_editing_description(true)} className='text-slate-400 hover:bg-slate-400/40 transition-all ease duration-75 py-2'>Add a description...</div>}
+         </div>}
+        {!is_editing_description && <div onClick={() => set_is_editing_description(true)} className='text-slate-300 hover:bg-slate-400/40 transition-all ease duration-75 py-1'>{card.description ?? 'Add a description...'}</div>}
       </div>
 
       <div className='p-2'>
@@ -676,9 +700,8 @@ return <Dialog open={isOpen} onOpenChange={onOpenChange} >
             <div>{isPending ? 'loading' : user?.image ? <img src={user.image} className='w-8 h-8 rounded-full' /> : <div className='w-8 h-8 rounded-full font-semibold flex justify-center items-center'>{user.name.slice(0,1)}</div>}</div>
             <div className='flex-1'>
             <textarea name='comment' className='w-full border rounded-xs px-4 py-2 outline-0 mb-1' autoFocus rows={2} placeholder='Add a comment'/>
-          <div className='flex gap-2 items-center'>
+          <div className='flex justify-self-end gap-2 items-center'>
             <button className='bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-xs font-semibold cursor-pointer'>Save</button>
-            <button type='button' className='cursor-pointer font-semibold hover:bg-slate-500/60 px-2 py-1 rounded-xs'>Cancel</button>
           </div>
             </div>
           </div>

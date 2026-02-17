@@ -30,4 +30,8 @@ async function create_card_comment(DTO: { sender_id: number; card_id: number; or
    return await card_comment_repository.create_card_comment(DTO)
 }
 
-export const card_service = { create_card, switch_card_positions, switch_card_column, get_card_comments, create_card_comment }
+async function update_card(card_id: number, values: { title?: string; description?: string; position?: number; created_by?: number; due_date?: string; priority?: string; org_id?: number; column_id?: number } ) {
+   return await card_repository.update_card(card_id, values)
+}
+
+export const card_service = { create_card, switch_card_positions, switch_card_column, get_card_comments, create_card_comment, update_card }
