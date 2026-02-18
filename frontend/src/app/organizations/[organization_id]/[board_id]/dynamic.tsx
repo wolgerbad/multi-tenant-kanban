@@ -359,11 +359,6 @@ export function Column({
 
   const formatted_date = date && format(date, 'yyyy-MM-dd');
 
-  const { data: users, isPending } = useQuery({
-    queryKey: ['members_of_organization', column.org_id],
-    queryFn: async () => await get_members_of_organization(column.org_id),
-  });
-
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
       id: `column-${column.id}`,
@@ -436,14 +431,14 @@ export function Column({
         <input type='text' value={client_column_title} onChange={(e) => set_client_column_title(e.target.value)} onKeyDown={(e) => {
           if(e.key === 'Enter') return handle_update_column_title()
             return
-        }} className='h-full w-full p-2 font-semibold outline-0 border-2 border-slate-600 rounded-xs' autoFocus onBlur={() => set_is_editing_title(false)}/>
-        <div className='absolute right-2 top-1/2 -translate-y-1/2 self-end'>
-          <button onMouseDown={handle_update_column_title} className='p-2 rounded-xs hover:bg-slate-500/60 cursor-pointer '>
+        }} className='py-1 h-full w-full font-semibold outline-0 border-2 border-slate-600 rounded-xs' autoFocus onBlur={() => set_is_editing_title(false)}/>
+        <div className='absolute right-0 top-1/2 -translate-y-1/2 self-end'>
+          <button onMouseDown={handle_update_column_title} className=' rounded-xs p-1 hover:bg-slate-500/60 cursor-pointer '>
             <Check size={14} color='#90a1b9' />
           </button>
         </div>
         </div>}
-        {!is_editing_title && <h2 onClick={() => set_is_editing_title(true)} className="text-sm font-semibold text-slate-200">{column.title}</h2>}
+        {!is_editing_title && <div onClick={() => set_is_editing_title(true)} className="py-1 hover:bg-slate-400/40 w-2/3 text-sm font-semibold text-slate-200">{column.title}</div>}
         <span className="text-[11px] text-slate-500 ml-2">
           {column.cards?.length} {column.cards?.length === 1 ? 'card' : 'cards'}
         </span>
