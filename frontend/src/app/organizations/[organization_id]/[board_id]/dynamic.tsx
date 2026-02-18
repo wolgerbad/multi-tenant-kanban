@@ -71,6 +71,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   horizontalListSortingStrategy,
+  rectSortingStrategy,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
@@ -247,11 +248,6 @@ export function Columns({
     ) {
       if (active.data.current?.column_id === over.data.current?.column_id) {
         if (drag_id === drop_id) return;
-        console.log(
-          'switch_card_positions_same_column_running',
-          drag_id,
-          drop_id
-        );
         const result = await switch_card_positions({
           dragged_card: drag_id,
           dropped_card: drop_id,
@@ -263,9 +259,9 @@ export function Columns({
       } else if (
         active.data.current?.column_id !== over.data.current?.column_id
       ) {
-        const result = await switch_card_column({
-          card_id: drag_id,
-          column_id: over.data.current.column_id,
+        const result = await switch_card_positions({
+          dragged_card: drag_id,
+          dropped_card: drop_id
         });
         if (result.ok) {
           socket.emit('dragndrop_event', organization_id);
@@ -924,20 +920,20 @@ export function ProfileDropdown({ user }: { user: User }) {
          <ProfilePicture user={user} className='w-8 h-8 cursor-pointer' />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-slate-900 text-slate-400">
-        <DropdownMenuItem>
+      <DropdownMenuContent className="bg-slate-900 text-slate-400 mt-1">
+        <DropdownMenuItem className='p-0'>
           <Link
             href="/account/profile"
-            className="flex gap-2 items-center w-full h-full"
+            className="flex gap-2 items-center w-full h-full p-2"
           >
             <UserIcon />
             Profile
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem className='p-0'>
           <Link
             href="/account/invites"
-            className="flex gap-2 items-center w-full h-full"
+            className="flex gap-2 items-center w-full h-full p-2"
           >
             <FcInvite />
             <span> Invites </span>
@@ -949,10 +945,10 @@ export function ProfileDropdown({ user }: { user: User }) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive">
+        <DropdownMenuItem className='p-0' variant="destructive">
           <button
             onClick={handle_logout}
-            className="w-full h-full flex items-center gap-2"
+            className="w-full h-full flex items-center gap-2 cursor-pointer p-2"
           >
             <LogOutIcon />
             Log out

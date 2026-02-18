@@ -15,8 +15,8 @@ async function switch_card_positions(card_ids: { dragged_card: number; dropped_c
 
 async function switch_card_column(DTO: { card_id: number; column_id: number; }) {
     const cards = await card_repository.get_cards_by_column_id(DTO.column_id)
-    const last_card_position = cards.at(-1)?.position
-    return card_repository.switch_card_column({...DTO, position: last_card_position ? last_card_position + 1 : 0})
+    const last_card_position = cards.at(-1)?.position ?? -1
+    return card_repository.switch_card_column({...DTO, position: last_card_position + 1})
 }
 
 async function get_card_comments(card_id: number) {

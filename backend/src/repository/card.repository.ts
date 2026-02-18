@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, ne, sql } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { Card, card } from "../db/schema.js";
 
@@ -15,8 +15,9 @@ async function create_card(cardDTO: Card) {
 }
 
 async function switch_card_positions(dragged_card: Card, dropped_card: Card) {
-   await db.update(card).set({position: dropped_card.position }).where(eq(card.id, dragged_card.id))
-   await db.update(card).set({position: dragged_card.position }).where(eq(card.id, dropped_card.id))
+   await db.update(card).set({position: dropped_card.position, column_id: dropped_card.column_id }).where(eq(card.id, dragged_card.id))
+   await db.update(card).set({position: sql`${dropped_card.position} + 1` }).where(eq(card.id, dropped_card.id))
+   await db.update(card).set({position: sql`${card.position} + 1` }).where(and(ne(card.id, dragged_card.id), ne(card.id, dropped_card.id), gt(card.position, dropped_card.position), eq(card.column_id, dropped_card.column_id)))
 }
 
 async function switch_card_column(DTO: { card_id: number; column_id: number, position: number }) {

@@ -25,6 +25,7 @@ export async function switch_card_positions(card_ids: { dragged_card: number; dr
   return await res.json()
 }
 
+
 export async function switch_card_column(DTO: { card_id: number; column_id: number }) {
  const res = await fetch('http://localhost:8000/card/switch-column', {
     method: 'POST',
