@@ -5,6 +5,7 @@ import { get_columns_by_board_id } from '@/helpers/column'
 import { get_members_of_organization } from '@/helpers/organization_member'
 import { getSession } from '@/helpers/session'
 import { Columns, CreateColumn, MembersDropdown, ProfileDropdown } from './dynamic'
+import ProfilePicture from '@/components/profile_picture'
 
 export default async function BoardPage({
   params,
@@ -43,7 +44,7 @@ export default async function BoardPage({
               </h1>
               <div className="ml-4 flex items-center gap-1">
                 <span className="text-slate-400">members:</span>
-                {organization_members.slice(0, 3)?.map(member => <div key={member.id}>{member.user.image ? <img src={member.user.image} className="w-6 h-6 rounded-full" /> : <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-400 text-black text-xl font-semibold">{member.user.name.slice(0, 1)}</div>}</div>)}
+                {organization_members.slice(0, 3)?.map(member => <ProfilePicture key={member.id} user={member.user} className='w-6 h-6' />)}
                 <div className="text-2xl cursor-pointer text-slate-400 hover:text-slate-500">
                   <MembersDropdown organization_members={organization_members} organization_id={organization_id} sender_id={session.data?.id} />
                 </div>
@@ -56,20 +57,20 @@ export default async function BoardPage({
         </header>
 
         {/* Board content - horizontal scroll */}
-        {isUserAllowed && columns?.length && (
+        {isUserAllowed && columns?.length > 0 && (
           <div className="flex-1 overflow-x-auto">
             <Columns columns={columns} organization_id={organization_id} board_id={board_id} user_id={session.data.id} />
           </div>
         )}
         {isUserAllowed && !columns?.length && ( 
-            <div className='flex items-center '>
-              <div className="mt-6 rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400 max-w-64">
-                  You&apos;re not part of any boards yet. Create a new one to get
-                  started.
-              </div>
-                        
-            <CreateColumn board_id={board_id} organization_id={organization_id} position={0} />
+            <div className='px-4 flex gap-4 mt-6'>
+            <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400 max-w-64">
+                You&apos;re not part of any boards yet. Create a new one to get
+                started.
             </div>
+                      
+          <CreateColumn board_id={board_id} organization_id={organization_id} position={0} />
+          </div>
         )}
         {
           !isUserAllowed && (

@@ -88,6 +88,7 @@ import {
 import { get_members_of_organization } from '@/helpers/organization_member';
 import { Input } from '@/components/ui/input';
 import { create_card_comment, get_card_comments } from '@/helpers/card_comment';
+import ProfilePicture from '@/components/profile_picture';
 
 interface PropTypes {
   board_id: number;
@@ -134,7 +135,7 @@ export function CreateColumn({
           onClick={() => setIsOpen(true)}
           variant="outline"
           size="sm"
-          className="rounded-full gap-2 text-slate-400 border-slate-700 hover:border-slate-600 hover:text-slate-200 bg-slate-900 hover:bg-slate-900 cursor-pointer"
+          className="rounded-sm gap-2 text-slate-300 border-slate-400 hover:border-slate-600 hover:text-slate-200 bg-slate-900 hover:bg-slate-900 cursor-pointer"
         >
           <Plus size={16} />
           Add column
@@ -143,12 +144,12 @@ export function CreateColumn({
       {isOpen && (
         <form
           action={handle_create_column}
-          className="flex flex-col gap-2 min-w-[200px]"
+          className="flex flex-col gap-2 min-w-[280px]"
         >
           <Input
             name="column_name"
             placeholder="Add new column"
-            className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500 outline-0"
+            className="ring-0 focus-visible:ring-1 bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500 outline-0"
             autoFocus
           />
           <div className="flex gap-2">
@@ -626,13 +627,7 @@ export function Card({ card, user_id }: { card: Card; user_id: number }) {
         <div>
           {isPending ? (
             <p>loading..</p>
-          ) : user?.image ? (
-            <img src={user.image} className="w-6 h-6 rounded-full" />
-          ) : (
-            <div className="w-6 h-6 rounded-full bg-slate-400 text-black flex justify-center items-center text-lg font-semibold">
-              {user.name.slice(0, 1)}
-            </div>
-          )}
+          ) : <ProfilePicture user={user} className='w-6 h-6' /> }
         </div>
       </div>
       <CardDetailsDropdown isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} card={card} user_id={user_id} />
@@ -739,7 +734,7 @@ return <Dialog open={isOpen} onOpenChange={onOpenChange} >
         <h2 className='font-semibold mb-2'>Comments</h2>
        <form action={handle_create_card_comment}>
           <div className='flex gap-2 '>
-            <div>{isPending ? 'loading' : user?.image ? <img src={user.image} className='w-8 h-8 rounded-full' /> : <div className='w-8 h-8 rounded-full font-semibold flex justify-center items-center'>{user.name.slice(0,1)}</div>}</div>
+            <div>{isPending ? 'loading' : <ProfilePicture user={user} className='w-8 h-8' />}</div>
             <div className='flex-1'>
             <textarea name='comment' className='w-full border rounded-xs px-4 py-2 outline-0 mb-1' autoFocus rows={2} placeholder='Add a comment'/>
           <div className='flex justify-self-end gap-2 items-center'>
@@ -753,7 +748,7 @@ return <Dialog open={isOpen} onOpenChange={onOpenChange} >
         {card_comments?.length && card_comments.map(comment => (
           <div key={comment.comment.id} className='p-2'>
             <div className='flex gap-2 '>
-              <div className=''>{isPending ? 'loading' : comment.user?.image ? <img src={comment.user.image} className='w-8 h-8 rounded-full' /> : <div className='w-8 h-8 rounded-full font-semibold flex justify-center items-center'>{user.name.slice(0,1)}</div>}</div>
+              <div className=''>{isPending ? 'loading' : <ProfilePicture user={comment.user} className='w-8 h-8' />}</div>
               <div className='self-start'>
                 <h3 className='font-semibold'>{comment.user.name}</h3>
                 <p className='text-xs text-slate-300 mb-2'>{formatDistanceToNow(comment.comment.created_at)} ago</p>
@@ -926,16 +921,7 @@ export function ProfileDropdown({ user }: { user: User }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button>
-          {user.image ? (
-            <img
-              src={user.image}
-              className="cursor-pointer w-8 h-8 rounded-full"
-            />
-          ) : (
-            <div className="cursor-pointer w-8 text-center rounded-full flex items-center justify-center text-xl font-semibold bg-slate-400">
-              {user.name.slice(0, 1)}
-            </div>
-          )}
+         <ProfilePicture user={user} className='w-8 h-8 cursor-pointer' />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-slate-900 text-slate-400">

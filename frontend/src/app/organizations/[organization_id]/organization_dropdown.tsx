@@ -19,7 +19,7 @@ export function OrganizationsDropdown({ organizations, organization_id }: { orga
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className='border outline-0 px-2 py-1 rounded-sm flex items-center justify-between gap-2 w-60'>
+        <button className='border border-slate-400 text-slate-300 outline-0 px-2 py-1 rounded-sm flex items-center justify-between gap-2 w-60'>
           {selected_organization ? selected_organization.title : 'Select an organization'}
           <ChevronDown />
           {/* {user.image ? <img src={user.image} className="cursor-pointer w-8 h-8 rounded-full" /> : <div className="cursor-pointer w-8 text-center rounded-full flex items-center justify-center text-xl font-semibold bg-slate-400">{user.name.slice(0, 1)}</div>} */}

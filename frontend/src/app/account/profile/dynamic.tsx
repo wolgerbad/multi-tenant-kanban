@@ -11,6 +11,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Input } from '@/components/ui/input'
 import { update_user_image, update_user_name } from '@/helpers/user'
 import { create_image_url, upload_image_to_bucket } from '@/helpers/upload'
+import ProfilePicture from '@/components/profile_picture'
 
 export function ProfileForm({ user }: { user: User }) {
   const router = useRouter()
@@ -74,22 +75,13 @@ export function ProfileForm({ user }: { user: User }) {
 
 export function UserImage({user}: {user: User}) {
   return <div className="flex flex-col items-center gap-4">
-  <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-emerald-500/10 text-2xl font-semibold text-emerald-300 ring-2 ring-slate-700">
-    {user.image ? (
-        <img
-          src={user.image}
-          alt={user.name}
-          className="h-full w-full rounded-full object-cover"
-        />
-    ) : (
-        <span>{user.name.slice(0, 2).toUpperCase()}</span>        
-    )}
+  <ProfilePicture user={user} className="relative h-24 w-24 text-2xl">
     <UploadDialog user_id={user.id}>
       <span className='cursor-pointer absolute -bottom-2 -right-2 bg-slate-900/60 rounded-full p-2 border border-slate-700'>
         <Camera />
       </span>
     </UploadDialog>
-  </div>
+  </ProfilePicture>
   <p className="text-xs text-slate-400">Profile picture</p>
 </div>
 }

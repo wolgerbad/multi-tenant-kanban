@@ -7,6 +7,7 @@ import { getSession } from '@/helpers/session'
 import { ProfileDropdown } from './[board_id]/dynamic'
 import { OrganizationsDropdown } from './organization_dropdown'
 import { CreateNewBoard } from './dynamic'
+import { CreateNewOrganization } from '../dynamic'
 
 export default async function Page({ params }: { params: Promise<{ organization_id: number }> }) {
   const organization_id = Number((await params).organization_id)
@@ -25,14 +26,17 @@ export default async function Page({ params }: { params: Promise<{ organization_
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-8 gap-8">
         {/* Top navbar */}
         <header className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 ring-1 ring-emerald-500/40">
-              <span className="text-sm font-semibold text-emerald-300">KB</span>
-            </div>
-            <span className="text-sm font-medium tracking-tight text-slate-100">
-              Flowboard
-            </span>
+          <div className="flex items-center gap-4">
+            <Link className='flex gap-2 items-center' href='/organizations'>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 ring-1 ring-emerald-500/40">
+                <span className="text-sm font-semibold text-emerald-300">KB</span>
+              </div>
+              <span className="text-sm font-medium tracking-tight text-slate-100">
+                Flowboard
+              </span>
+            </Link>
             <OrganizationsDropdown organizations={organizations} organization_id={organization_id} />
+            <CreateNewOrganization user_id={session.data.id} />
           </div>
           <ProfileDropdown user={session.data} />
         </header>
@@ -55,10 +59,9 @@ export default async function Page({ params }: { params: Promise<{ organization_
                 </p>
               </div>
             </div>
-
             {!boards?.length  ? (
-              <div className='flex '>
-                <div className="mt-6 rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400 max-w-64">
+              <div className='mt-8 flex gap-4'>
+                <div className="h-full rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400 max-w-64">
                   You&apos;re not part of any boards yet. Create a new one to get
                   started.
                 </div>

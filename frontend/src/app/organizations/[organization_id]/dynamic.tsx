@@ -47,7 +47,7 @@ export function CreateNewBoard({
           onClick={() => setIsOpen(true)}
           variant="outline"
           size="sm"
-          className="gap-2 ml-2 bg-slate-900 hover:bg-slate-950 text-slate-300 hover:text-slate-300 cursor-pointer border-slate-400"
+          className="rounded-sm gap-2 ml-2 bg-slate-900 hover:bg-slate-900 hover:border-slate-600 text-slate-300 hover:text-slate-300 cursor-pointer border-slate-400"
         >
           <Plus size={16} />
           Create new board
@@ -58,7 +58,7 @@ export function CreateNewBoard({
           <Input
             name="board_title"
             placeholder="Enter board name..."
-            className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500"
+            className="bg-slate-800 ring-0 focus-visible:ring-1 border-slate-700 text-slate-100 placeholder:text-slate-500"
             autoFocus
           />
           <div className="flex gap-2">

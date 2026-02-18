@@ -30,7 +30,7 @@ export function CreateNewOrganization({user_id}: {user_id: number}) {
     const title = formData.get('title') as string
     const image = formData.get('image') as File
     if(title?.length < 4) return setError('Title must be at least 4 charachter') 
-      if(image) {
+      if(image?.name && image?.type?.startsWith('image')) {
        const url_result = await create_image_url(image);
        if(!url_result.ok) return setError('Something went wrong with uploading image. Try again later.')
        const res = await upload_image_to_bucket(url_result.data.signed_url, image)
