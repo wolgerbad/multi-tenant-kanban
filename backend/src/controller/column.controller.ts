@@ -33,4 +33,14 @@ async function switch_column_positions(req: Request, res: Response, next: NextFu
   }
 }
 
-export const column_controller = { get_columns_by_board_id, create_column, switch_column_positions }
+async function update_column_title(req: Request, res: Response, next: NextFunction) {
+  const DTO = req.body
+  try {
+    await column_service.update_column_title(DTO)
+    res.json({ ok: true })
+  } catch (error: any) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+export const column_controller = { get_columns_by_board_id, create_column, switch_column_positions, update_column_title }

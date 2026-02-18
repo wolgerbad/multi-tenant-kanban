@@ -26,3 +26,15 @@ export async function switch_column_positions(column_ids: { dragged_column: numb
   })
   return await res.json()
 }
+
+export async function update_column_title(title: string, column_id: number) {
+  const res = await fetch('http://localhost:8000/column/update-title', {
+    method: 'POST',
+    body: JSON.stringify({ column_id, title }),
+    headers: {
+      'Content-Type': 'application/json'
+    },
+  })
+
+  return await res.json()
+}

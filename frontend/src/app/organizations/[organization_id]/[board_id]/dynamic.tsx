@@ -49,7 +49,7 @@ import {
   switch_card_positions,
   update_card,
 } from '@/helpers/card';
-import { create_column, switch_column_positions } from '@/helpers/column';
+import { create_column, switch_column_positions, update_column_title } from '@/helpers/column';
 import {
   get_organization_invites_of_member,
   send_organization_invite,
@@ -354,6 +354,8 @@ export function Column({
   active_id: string | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [client_column_title, set_client_column_title] = useState(() => column.title)
+  const [is_editing_title, set_is_editing_title] = useState(false)
   const router = useRouter();
   const [date, setDate] = useState<Date>();
   const last_position = column.cards.at(-1)?.position ?? -1;
@@ -398,6 +400,15 @@ export function Column({
     }
   }
 
+  async function handle_update_column_title() {
+    if(!client_column_title.trim().length || client_column_title === column.title) return
+    set_is_editing_title(false)
+    const result = await update_column_title(client_column_title, column.id)
+    if(!result.ok) return;
+    socket.emit('column_updated', column.org_id)
+    router.refresh()
+  }
+
   useEffect(
     function () {
       socket.on('card_new', () => {
@@ -406,6 +417,12 @@ export function Column({
     },
     [router]
   );
+
+  useEffect(function() {
+    socket.on('column_update_new', () => {
+      router.refresh()
+    })
+  }, [router])
 
   return (
     <div
@@ -418,8 +435,19 @@ export function Column({
     >
       {/* Column header Draggable */}
       <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 cursor-all-scroll">
-        <h2 className="text-sm font-semibold text-slate-200">{column.title}</h2>
-        <span className="text-[11px] text-slate-500">
+        {is_editing_title && <div className='relative flex flex-col'> 
+        <input type='text' value={client_column_title} onChange={(e) => set_client_column_title(e.target.value)} onKeyDown={(e) => {
+          if(e.key === 'Enter') return handle_update_column_title()
+            return
+        }} className='h-full w-full p-2 font-semibold outline-0 border-2 border-slate-600 rounded-xs' autoFocus onBlur={() => set_is_editing_title(false)}/>
+        <div className='absolute right-2 top-1/2 -translate-y-1/2 self-end'>
+          <button onMouseDown={handle_update_column_title} className='p-2 rounded-xs hover:bg-slate-500/60 cursor-pointer '>
+            <Check size={14} color='#90a1b9' />
+          </button>
+        </div>
+        </div>}
+        {!is_editing_title && <h2 onClick={() => set_is_editing_title(true)} className="text-sm font-semibold text-slate-200">{column.title}</h2>}
+        <span className="text-[11px] text-slate-500 ml-2">
           {column.cards?.length} {column.cards?.length === 1 ? 'card' : 'cards'}
         </span>
       </div>
@@ -546,7 +574,6 @@ export function Card({ card, user_id }: { card: Card; user_id: number }) {
   const formatted_date = format(card.due_date, 'MMM dd');
   const today = format(new Date(), 'MMM dd');
   const is_passed = isBefore(formatted_date, today);
-  console.log('is_passed', is_passed);
   const created_by = card.created_by;
 
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -615,7 +642,7 @@ export function Card({ card, user_id }: { card: Card; user_id: number }) {
 
 export function CardDetailsDropdown({isOpen, onOpenChange, card, user_id}: { isOpen: boolean; onOpenChange: Dispatch<SetStateAction<boolean>>; card: Card; user_id: number }) {
   const [client_card_title, set_client_card_title] = useState(() => card.title)
-  const [client_card_description, set_client_card_description] = useState(() => card.description)
+  const [client_card_description, set_client_card_description] = useState(() => card.description ?? '')
   const [is_editing_title, set_is_editing_title] = useState(false)
   const [is_editing_description, set_is_editing_description] = useState(false)
   const [error, setError] = useState<null | string>(null)
@@ -635,9 +662,11 @@ export function CardDetailsDropdown({isOpen, onOpenChange, card, user_id}: { isO
    useEffect(function() {
     socket.on('card_update_new', () => {
       console.log('card_update')
-      router.refresh()
+      queryClient.invalidateQueries({
+        queryKey: ['card_comments', card.id]
+      })
     })
-   }, [router])
+   }, [router, queryClient, card.id])
 
    async function handle_create_card_comment(formData: FormData) {
       setError(null)
@@ -682,7 +711,7 @@ return <Dialog open={isOpen} onOpenChange={onOpenChange} >
           if(e.key === 'Enter') return handle_update_card('title')
           return
         }} onChange={(e) => set_client_card_title(e.target.value) } className='h-full w-full p-2 text-lg font-semibold outline-0 border-2 border-slate-600' autoFocus onBlur={() => set_is_editing_title(false)}/>
-        <div data-ignoreBlur='true' className='self-end flex gap-2 items-center'>
+        <div className='self-end flex gap-2 items-center'>
           <button className='border-2 p-2 border-slate-400 rounded-xs hover:bg-slate-500/60 cursor-pointer'>
             <X size={18} color='#90a1b9' style={{ fontWeight: 'bold' }} />
           </button>
@@ -884,7 +913,6 @@ export function ProfileDropdown({ user }: { user: User }) {
     queryKey: ['organization_invites', user.id],
     queryFn: async () => get_organization_invites_of_member(user.id),
   });
-  console.log('invites', invites);
   const pending_invites =
     invites?.length &&
     invites?.filter((invite: Invite) => invite.status === 'pending');

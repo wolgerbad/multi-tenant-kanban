@@ -32,7 +32,7 @@ async function switch_card_column(req: Request, res: Response, next: NextFunctio
 }
 
 async function get_card_comments(req: Request, res: Response, next: NextFunction) {
-    const card_id = req.params.cardId
+    const card_id = Number(req.params.cardId)
     try {
        const result = await card_service.get_card_comments(card_id)
        if(!result.ok) throw new Error(result.message)

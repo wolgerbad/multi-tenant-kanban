@@ -79,6 +79,10 @@ io.on('connection', async (socket) => {
         console.log('card_updated')
         socket.to(`organization-${organization_id}`).emit('card_update_new')
     })
+
+    socket.on('column_updated', (organization_id) => {
+        socket.to(`organization-${organization_id}`).emit('column_update_new')
+    })
 })
 
 server.listen(8000, () => {

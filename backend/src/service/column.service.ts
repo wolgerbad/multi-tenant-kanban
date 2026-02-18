@@ -19,4 +19,8 @@ async function switch_column_positions(columns: { dragged_column: number; droppe
   return await column_repository.switch_column_positions({dragged_column, dropped_column})
 }
 
-export const column_service = { get_columns_by_board_id, create_column, switch_column_positions }
+async function update_column_title(DTO: { column_id: number; title: string }) {
+ return await column_repository.update_column_title(DTO.column_id, DTO.title)
+}
+
+export const column_service = { get_columns_by_board_id, create_column, switch_column_positions, update_column_title }
