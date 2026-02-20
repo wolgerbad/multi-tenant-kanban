@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx --watch src/sockets/index.ts",
-    "build": "node --version && npx tsc --version && tsc",
+    "build": "node --version && ./node_modules/.bin/tsc --version && tsc",
     "start": "node dist/index.js"
   },
   "keywords": [],
