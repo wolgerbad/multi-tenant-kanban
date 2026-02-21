@@ -25,7 +25,7 @@ app.use('/column', column_router);
 app.use('/card', card_router);
 app.use('/organization-member', organization_member_router);
 app.use('/organization-invite', organization_invite_router);
-app.use('/upload', upload_router)
+app.use('/upload', upload_router);
 app.use(error_handler);
 
 app.get('/', (req: Request, res: Response) => {

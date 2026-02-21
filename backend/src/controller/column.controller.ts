@@ -1,46 +1,62 @@
-import type { Request, Response, NextFunction } from "express";
-import { column_service } from "../service/column.service.js";
+import type { Request, Response, NextFunction } from 'express';
+import { column_service } from '../service/column.service.js';
 
-async function get_columns_by_board_id(req: Request, res:Response, next:NextFunction) {
-    const boardId = Number(req.params.boardId)
-    try {
-        const result = await column_service.get_columns_by_board_id(boardId)
-        if(!result.ok) throw new Error(result.message)
-        res.json(result.data)
-    } catch (error: any) {
-        res.status(500).json([])
-    }
+async function get_columns_by_board_id(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const boardId = Number(req.params.boardId);
+  try {
+    const result = await column_service.get_columns_by_board_id(boardId);
+    if (!result.ok) throw new Error(result.message);
+    res.json(result.data);
+  } catch (error: any) {
+    res.status(500).json([]);
+  }
 }
 
 async function create_column(req: Request, res: Response, next: NextFunction) {
   const columnDTO = req.body;
   try {
-     await column_service.create_column(columnDTO)
-      res.json({ok: true})
+    await column_service.create_column(columnDTO);
+    res.json({ ok: true });
   } catch (error: any) {
-    res.status(500).json({error: error.message})
+    res.status(500).json({ error: error.message });
   }
-  
 }
 
-async function switch_column_positions(req: Request, res: Response, next: NextFunction) {
-  const columns = { ...req.body }
+async function switch_column_positions(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const columns = { ...req.body };
   try {
-    await column_service.switch_column_positions(columns)
-    res.json({ok: true})
+    await column_service.switch_column_positions(columns);
+    res.json({ ok: true });
   } catch (error: any) {
-    res.status(500).json({ error: error.message })    
+    res.status(500).json({ error: error.message });
   }
 }
 
-async function update_column_title(req: Request, res: Response, next: NextFunction) {
-  const DTO = req.body
+async function update_column_title(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const DTO = req.body;
   try {
-    await column_service.update_column_title(DTO)
-    res.json({ ok: true })
+    await column_service.update_column_title(DTO);
+    res.json({ ok: true });
   } catch (error: any) {
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ error: error.message });
   }
 }
 
-export const column_controller = { get_columns_by_board_id, create_column, switch_column_positions, update_column_title }
+export const column_controller = {
+  get_columns_by_board_id,
+  create_column,
+  switch_column_positions,
+  update_column_title,
+};
