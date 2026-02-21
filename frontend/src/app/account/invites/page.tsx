@@ -7,7 +7,6 @@ import { AcceptForm, DeclineForm } from './dynamic';
 import { Invite, Organization, User } from '@/types';
 
 export default async function Page() {
-  //   const invites = MOCK_INVITES; // later: replace with data from backend
   const session = await getSession();
   if (!session.ok) redirect('/login');
 

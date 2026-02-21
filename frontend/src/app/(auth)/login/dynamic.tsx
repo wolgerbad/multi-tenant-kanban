@@ -1,5 +1,6 @@
 'use client';
 
+import { env } from '@/utils/envSchema';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -12,7 +13,7 @@ export function LoginForm() {
     const email = formData.get('email');
     const password = formData.get('password');
 
-    const res = await fetch(`http://localhost:8000/auth/login`, {
+    const res = await fetch(`${env.SERVER_URL}/auth/login`, {
       method: 'POST',
       body: JSON.stringify({ email, password }),
       headers: {
