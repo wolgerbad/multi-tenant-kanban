@@ -1,12 +1,11 @@
-import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { getSession } from '@/helpers/session'
-import { LoginForm } from './dynamic'
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getSession } from '@/helpers/session';
+import { LoginForm } from './dynamic';
 
 export default async function LoginPage() {
-  const session = await getSession()
-  if (session.ok)
-    redirect('/')
+  const session = await getSession();
+  if (session.ok) redirect('/');
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
@@ -33,8 +32,7 @@ export default async function LoginPage() {
           <LoginForm />
 
           <p className="mt-4 text-[11px] text-slate-400">
-            New to Flowboard?
-            {' '}
+            New to Flowboard?{' '}
             <Link
               href="/signup"
               className="text-emerald-300 hover:text-emerald-200"
@@ -49,5 +47,5 @@ export default async function LoginPage() {
         </p>
       </div>
     </main>
-  )
+  );
 }
