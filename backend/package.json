@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx --watch src/sockets/index.ts",
-    "build": "tsc -v tsc",
-    "start": "node dist/index.js"
+    "build": "tsc",
+    "start": "node dist/sockets/index.js"
   },
   "keywords": [],
   "author": "",
