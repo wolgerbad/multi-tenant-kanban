@@ -72,10 +72,12 @@ import { get_user } from '@/helpers/user';
 import { toast } from 'sonner';
 
 import {
+  Active,
   DndContext,
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  Over,
   PointerSensor,
   useSensor,
   useSensors,
@@ -208,13 +210,15 @@ export function Columns({
   );
 
   async function handle_drag_end(event: DragEndEvent) {
-    const { active, over } = event;
+    const { active, over }: { active: Active | null, over: Over |null } = event;
     setActiveId(null);
 
     if (!over) return;
 
-    const drag_id = +active.id.split('-')[1];
-    const drop_id = +over.id.split('-')[1];
+    const active_id = active.id as string
+    const over_id = over.id as string;
+    const drag_id = active_id?.split('-')[1];
+    const drop_id = over_id.split('-')[1];
 
     if (
       active.data.current?.type === 'column' &&
