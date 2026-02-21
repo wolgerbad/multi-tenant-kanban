@@ -27,18 +27,16 @@ import { useRouter } from 'next/navigation';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { FcInvite } from 'react-icons/fc';
 import { IoMdArrowDropdown } from 'react-icons/io';
-import { TbCalendarDue, TbOvalVerticalFilled } from 'react-icons/tb';
+import { TbCalendarDue } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -79,8 +77,6 @@ import {
   DragOverlay,
   DragStartEvent,
   PointerSensor,
-  useDraggable,
-  useDroppable,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -94,15 +90,6 @@ import {
 } from '@dnd-kit/sortable';
 import { logout } from '@/app/(auth)/actions';
 import { socket } from '@/helpers/socket';
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from '@/components/ui/combobox';
-import { get_members_of_organization } from '@/helpers/organization_member';
 import { Input } from '@/components/ui/input';
 import { create_card_comment, get_card_comments } from '@/helpers/card_comment';
 import ProfilePicture from '@/components/profile_picture';
@@ -214,7 +201,7 @@ export function Columns({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        delay: 250,
+        delay: 180,
         tolerance: 5,
       },
     })
@@ -223,7 +210,7 @@ export function Columns({
   async function handle_drag_end(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
-    console.log(active, over);
+
     if (!over) return;
 
     const drag_id = +active.id.split('-')[1];
@@ -374,6 +361,7 @@ export function Column({
   const router = useRouter();
   const [date, setDate] = useState<Date>();
   const last_position = column.cards.at(-1)?.position ?? -1;
+  const [error, setError] = useState(false)
 
   const formatted_date = date && format(date, 'yyyy-MM-dd');
 
@@ -391,8 +379,10 @@ export function Column({
   };
 
   async function handle_create_card(formData: FormData) {
+    setError(null)
     const card_title = formData.get('card_title') as string;
     const priority = formData.get('priority') as string;
+    if(!date) return setError(true)
     if (!card_title.trim().length || !priority || !date) return;
     const cardDTO = {
       title: card_title,
@@ -403,11 +393,10 @@ export function Column({
       priority,
       due_date: formatted_date,
     };
-    const result = await create_card(cardDTO);
-    if (result.ok) {
-      router.refresh();
-      socket.emit('card_created', column.org_id);
-    }
+    router.refresh();
+    socket.emit('card_created', column.org_id);
+
+
   }
 
   async function handle_update_column_title() {
@@ -450,7 +439,7 @@ export function Column({
       {...listeners}
       className="flex h-full min-w-[280px] flex-col rounded-xl border border-slate-800 bg-slate-900/40"
     >
-      {/* Column header Draggable */}
+
       <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 cursor-all-scroll">
         {is_editing_title && (
           <div className="relative flex flex-col">
@@ -462,14 +451,14 @@ export function Column({
                 if (e.key === 'Enter') return handle_update_column_title();
                 return;
               }}
-              className="py-1 h-full w-full font-semibold outline-0 border-2 border-slate-600 rounded-xs"
+              className="py-1 h-full w-full font-semibold outline-0 border-2 border-slate-600/60 rounded-xs"
               autoFocus
               onBlur={() => set_is_editing_title(false)}
             />
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 self-end">
+            <div className="absolute right-1 top-1/2 -translate-y-1/2 self-end">
               <button
                 onMouseDown={handle_update_column_title}
-                className=" rounded-xs p-1 hover:bg-slate-500/60 cursor-pointer "
+                className="rounded-xs p-1 hover:bg-slate-500/60 cursor-pointer "
               >
                 <Check size={14} color="#90a1b9" />
               </button>
@@ -488,7 +477,6 @@ export function Column({
           {column.cards?.length} {column.cards?.length === 1 ? 'card' : 'cards'}
         </span>
       </div>
-      {/* Cards container */}
       <Cards
         cards={column.cards}
         active_id={active_id}
@@ -496,7 +484,6 @@ export function Column({
         organization_id={column.org_id}
         user_id={user_id}
       />
-      {/* Add card button */}
       <div className="border-t border-slate-800 p-3">
         {!isOpen && (
           <button
@@ -514,7 +501,7 @@ export function Column({
             <input
               type="text"
               name="card_title"
-              className="w-full mb-1 px-3 py-2 rounded-lg outline-0 bg-white "
+              className="w-full mb-1 px-3 py-2 rounded-lg outline-0 bg-white text-[12px] text-slate-700"
             />
             <div className="flex items-center">
               <select name="priority" className="text-[13px] outline-0">
@@ -531,7 +518,7 @@ export function Column({
                         {format(date, 'MMM dd')}
                       </span>
                     ) : (
-                      <span className="text-2xl hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer">
+                      <span className={`text-2xl hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer ${error ? 'border border-red-600' : ''}`}>
                         <TbCalendarDue />
                       </span>
                     )}
@@ -714,7 +701,6 @@ export function CardDetailsDropdown({
   useEffect(
     function () {
       socket.on('card_update_new', () => {
-        console.log('card_update');
         queryClient.invalidateQueries({
           queryKey: ['card_comments', card.id],
         });
@@ -934,7 +920,6 @@ export function MembersDropdown({
   async function handle_send_invite(formData: FormData) {
     const email = formData.get('email') as string;
     const role = formData.get('role') as string;
-    console.log('role', role);
     const inviteDTO = { email, org_id: organization_id, sender_id, role };
     const result = await send_organization_invite(inviteDTO);
     if (!result.ok) return setError(result.error);
@@ -989,7 +974,7 @@ export function MembersDropdown({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Dialog open={isOpen}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-sm bg-slate-900 text-slate-300 border border-slate-600">
           {!can_send_invite && (
             <div>

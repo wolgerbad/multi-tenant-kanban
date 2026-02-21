@@ -34,6 +34,8 @@ io.use(async (socket: Socket, next: NextFunction) => {
 
   const parsed = parseCookie(cookies);
   const jwt = parsed?.jwt as string;
+  
+  if(!jwt) return next();
 
   const verify = await jwtVerify(jwt, SECRET);
   socket.data.user_id = verify?.payload?.id;
@@ -43,6 +45,7 @@ io.use(async (socket: Socket, next: NextFunction) => {
 io.on('connection', async (socket: Socket) => {
   console.log('uh');
   const user_id = socket.data.user_id;
+  if(!user_id) return;
   const [user] = await user_repository.get_user_by_id(user_id);
   socket.join(`user-${user.id}`);
   const organization_ids =

@@ -13,7 +13,6 @@ export default async function ProfilePage() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-6 py-10">
-        {/* Header */}
         <header className="mb-8">
           <BackButton />
           <h1 className="text-2xl font-semibold tracking-tight text-slate-50 mt-4">
@@ -24,14 +23,10 @@ export default async function ProfilePage() {
           </p>
         </header>
 
-        {/* Profile Content */}
         <section className="space-y-6">
-          {/* Profile Info Card */}
           <article className="rounded-sm border border-slate-800 bg-slate-900/60 p-6 shadow-[0_12px_40px_rgba(15,23,42,0.8)]">
             <div className="flex flex-col gap-6 md:flex-row md:items-start">
-              {/* Avatar Section */}
               <UserImage user={user} />
-              {/* User Info */}
               <div className="flex-1 space-y-4">
                 <div>
                   <h2 className="text-lg font-semibold text-slate-50">
@@ -39,14 +34,11 @@ export default async function ProfilePage() {
                   </h2>
                   <p className="mt-1 text-sm text-slate-400">{user.email}</p>
                 </div>
-
-                {/* Edit Form */}
                 <ProfileForm user={user} />
               </div>
             </div>
           </article>
 
-          {/* Account Info Card */}
           <article className="rounded-sm border border-slate-800 bg-slate-900/60 p-6 shadow-[0_12px_40px_rgba(15,23,42,0.8)]">
             <h3 className="mb-4 text-base font-semibold text-slate-50">
               Account Information

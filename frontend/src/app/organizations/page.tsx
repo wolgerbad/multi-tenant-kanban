@@ -20,12 +20,9 @@ export default async function Page({
   const organizations = await get_organizations_of_member(session.data.id);
   const boards = await get_boards_of_organization(organization_id);
 
-  console.log('boards', boards);
-
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-8 gap-8">
-        {/* Top navbar */}
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/organizations" className="flex items-center gap-2">
@@ -46,8 +43,7 @@ export default async function Page({
           </div>
           <ProfileDropdown user={session.data} />
         </header>
-
-        {/* Content */}
+        
         <div className="flex flex-col gap-2 items-center">
           <h1 className="text-xl font-semibold tracking-tight">
             Welcome to FlowBoard.

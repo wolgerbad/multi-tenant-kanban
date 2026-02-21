@@ -4,14 +4,12 @@ import { getSession } from '@/helpers/session';
 
 export default async function Home() {
   const session = await getSession();
-  console.log('session', session);
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-10">
-        {/* Top nav / logo */}
         <Navbar session={session} />
 
-        {/* Hero */}
         <section className="mt-20 grid gap-10 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] items-center">
           <div className="space-y-6">
             <p className="text-xs uppercase tracking-[0.25em] text-emerald-300/80">
@@ -47,7 +45,6 @@ export default async function Home() {
             </div>
           </div>
 
-          {/* Simple board preview */}
           <div className="rounded-2xl border border-slate-700/80 bg-slate-900/60 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.9)]">
             <div className="mb-3 flex items-center justify-between text-[11px] text-slate-400">
               <span className="flex items-center gap-1">
@@ -105,7 +102,6 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Small footer / social proof */}
         <footer className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800/80 pt-4 text-[11px] text-slate-500">
           <span>©{new Date().getFullYear()} Flowboard, Inc.</span>
           <span className="text-slate-400/90">

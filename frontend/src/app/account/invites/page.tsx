@@ -17,7 +17,6 @@ export default async function Page() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-6 py-10">
-        {/* Header */}
         <header className="mb-8 flex flex-col gap-4">
           <BackButton />
           <div>
@@ -31,7 +30,6 @@ export default async function Page() {
           </div>
         </header>
 
-        {/* Content */}
         {!hasInvites ? (
           <div className="mt-10 flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 px-6 py-12 text-center">
             <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-slate-800/70 text-slate-300">
@@ -53,7 +51,6 @@ export default async function Page() {
                 className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 shadow-[0_12px_40px_rgba(15,23,42,0.8)] md:flex-row md:items-center md:justify-between"
               >
                 <div className="flex flex-1 items-start gap-3">
-                  {/* Org avatar */}
                   <div className="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-semibold text-emerald-300">
                     {invite.organization.title.slice(0, 2).toUpperCase()}
                   </div>
@@ -80,7 +77,6 @@ export default async function Page() {
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center gap-2 md:justify-end">
                   {invite.status === 'pending' && (
                     <>

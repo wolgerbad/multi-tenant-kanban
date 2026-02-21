@@ -20,7 +20,6 @@ export default async function BoardPage({
   const { organization_id, board_id } = await params;
   const session = await getSession();
   if (!session.ok) redirect('/');
-  console.log('session', session);
 
   const columns = await get_columns_by_board_id(board_id);
   const board = await get_board_by_id(board_id);
@@ -33,7 +32,6 @@ export default async function BoardPage({
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="flex min-h-screen flex-col">
-        {/* Top navbar */}
         <header className="border-b border-slate-800 bg-slate-900/60 px-6 py-3">
           <div className="mx-auto flex max-w-[1600px] items-center justify-between">
             <div className="flex items-center gap-4">
@@ -45,7 +43,6 @@ export default async function BoardPage({
               </Link>
               <div className="h-4 w-px bg-slate-700" />
               <h1 className="text-sm font-semibold text-slate-100">
-                {/* TODO: Replace with board.title from API */}
                 {board.title}
               </h1>
               <div className="ml-4 flex items-center gap-1">
@@ -72,7 +69,6 @@ export default async function BoardPage({
           </div>
         </header>
 
-        {/* Board content - horizontal scroll */}
         {isUserAllowed && columns?.length > 0 && (
           <div className="flex-1 overflow-x-auto">
             <Columns

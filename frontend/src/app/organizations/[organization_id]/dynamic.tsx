@@ -16,7 +16,6 @@ export function CreateNewBoard({
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<null | string>(null);
   const router = useRouter();
-  console.log('orgid', organization_id);
 
   async function handle_create_board(formData: FormData) {
     // setError(null)

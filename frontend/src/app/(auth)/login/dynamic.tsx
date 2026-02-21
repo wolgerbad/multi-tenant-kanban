@@ -41,12 +41,6 @@ export function LoginForm() {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs">
           <label className="font-medium text-slate-300">Password</label>
-          {/* <button
-          type="button"
-          className="text-[11px] text-slate-400 hover:text-slate-200"
-        >
-          Forgot?
-        </button> */}
         </div>
         <input
           type="password"
