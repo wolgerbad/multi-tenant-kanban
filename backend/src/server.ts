@@ -10,11 +10,12 @@ import { router as card_router } from './routes/card.js';
 import { router as organization_member_router } from './routes/organization_member.js';
 import { router as organization_invite_router } from './routes/organization_invite.js';
 import { router as upload_router } from './routes/upload.js';
+import { env } from './utils/envSchema.js';
 
 export const app = express();
 
 app.use(express.json());
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors({ origin: env.APP_URL, credentials: true }));
 
 app.use('/auth', auth_router);
 app.use('/user', user_router);
