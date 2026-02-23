@@ -1,6 +1,6 @@
 'use client';
 
-import { env } from '@/utils/envSchema';
+import { clientEnv } from '@/utils/envSchema';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -13,7 +13,7 @@ export function LoginForm() {
     const email = formData.get('email');
     const password = formData.get('password');
 
-    const res = await fetch(`${env.SERVER_URL}/auth/login`, {
+    const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/login`, {
       method: 'POST',
       body: JSON.stringify({ email, password }),
       headers: {
@@ -22,6 +22,7 @@ export function LoginForm() {
       credentials: 'include',
     });
     const result = await res.json();
+    console.log("result of login", result)
     if (result.error) return setError(result.error);
     router.refresh();
   }

@@ -1,12 +1,12 @@
-import { env } from "@/utils/envSchema"
+import { clientEnv } from "@/utils/envSchema"
 
 export async function get_user(userId: number) {
-  const res = await fetch(`${env.SERVER_URL}/user/${userId}`)
+  const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/user/${userId}`)
   return await res.json()
 }
 
 export async function update_user_name(DTO: { user_id: number, name: string }) {
- const res = await fetch(`${env.SERVER_URL}/user/update/name`, {
+ const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/user/update/name`, {
     method: 'POST',
     body: JSON.stringify(DTO),
     headers: {
@@ -18,7 +18,7 @@ export async function update_user_name(DTO: { user_id: number, name: string }) {
 }
 
 export async function update_user_image(user_id: number, final_url: string) {
- const res = await fetch(`${env.SERVER_URL}/user/update/image`, {
+ const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/user/update/image`, {
     method: 'POST',
     body: JSON.stringify({ user_id, image: final_url }),
     headers: {

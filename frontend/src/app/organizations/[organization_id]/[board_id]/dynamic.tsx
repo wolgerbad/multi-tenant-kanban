@@ -393,10 +393,9 @@ export function Column({
       priority,
       due_date: formatted_date,
     };
+    await create_card(cardDTO)
     router.refresh();
     socket.emit('card_created', column.org_id);
-
-
   }
 
   async function handle_update_column_title() {

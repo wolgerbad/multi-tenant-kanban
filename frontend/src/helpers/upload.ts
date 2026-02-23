@@ -1,7 +1,7 @@
-import { env } from "@/utils/envSchema";
+import { clientEnv } from "@/utils/envSchema";
 
 export async function create_image_url(image: File) {
-    const res = await fetch(`${env.SERVER_URL}/upload/image/create-url`, {
+    const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/upload/image/create-url`, {
       method: 'POST',
       body: JSON.stringify({file_type: image.type, file_name: image.name}),
       headers: {

@@ -64,6 +64,8 @@ export function CreateNewOrganization({ user_id }: { user_id: number }) {
     setIsLoading(false);
     router.refresh();
   }
+
+  
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>

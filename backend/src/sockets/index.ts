@@ -16,14 +16,14 @@ dotenv.config();
 const SECRET = new TextEncoder().encode(env.JWT_SECRET);
 const server = createServer(app);
 const io = new Server(server, {
-  cors: { origin: 'http://localhost:3000', credentials: true },
+  cors: { origin: env.APP_URL, credentials: true },
 });
 
 export const client = new S3Client({
-  region: process.env.AWS_REGION!,
+  region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.AWS_ACCESS_KEY,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
 
@@ -33,7 +33,7 @@ io.use(async (socket: Socket, next: NextFunction) => {
   if (!cookies) return next(new Error('no cookie found.'));
 
   const parsed = parseCookie(cookies);
-  const jwt = parsed?.jwt as string;
+  const jwt = parsed?.jwt;
   
   if(!jwt) return next();
 

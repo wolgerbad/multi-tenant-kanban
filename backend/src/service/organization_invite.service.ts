@@ -9,6 +9,9 @@ async function send_organization_invite(inviteDTO: {
   role: string;
 }) {
   const [user] = await user_repository.get_user_by_email(inviteDTO.email);
+  if (!user)
+    return { ok: false, error: 'User with the given email does not exist.' };
+  
   const org_ids =
     await organization_member_repository.get_organization_ids_of_member(
       user.id
@@ -17,8 +20,6 @@ async function send_organization_invite(inviteDTO: {
     (org_id) => org_id === inviteDTO.org_id
   );
 
-  if (!user)
-    return { ok: false, error: 'User with the given email does not exist.' };
   const inviteExists =
     await organization_invite_repository.get_organization_invite(
       user.id,
