@@ -1,7 +1,8 @@
 import type { Card } from '@/types'
+import { env } from '@/utils/envSchema';
 
 export async function create_card(cardDTO: Card) {
-  const res = await fetch('http://localhost:8000/card/create', {
+  const res = await fetch(`${env.SERVER_URL}/card/create`, {
     method: 'POST',
     body: JSON.stringify(cardDTO),
     headers: {
@@ -14,7 +15,7 @@ export async function create_card(cardDTO: Card) {
 }
 
 export async function switch_card_positions(card_ids: { dragged_card: number; dropped_card: number }) {
-  const res = await fetch(`http://localhost:8000/card/switch-positions`, {
+  const res = await fetch(`${env.SERVER_URL}/card/switch-positions`, {
     method: 'POST',
     body: JSON.stringify(card_ids),
     headers: {
@@ -27,7 +28,7 @@ export async function switch_card_positions(card_ids: { dragged_card: number; dr
 
 
 export async function switch_card_column(DTO: { card_id: number; column_id: number }) {
- const res = await fetch('http://localhost:8000/card/switch-column', {
+ const res = await fetch(`${env.SERVER_URL}/card/switch-column`, {
     method: 'POST',
     body: JSON.stringify(DTO),
     headers: {
@@ -39,7 +40,7 @@ export async function switch_card_column(DTO: { card_id: number; column_id: numb
 }
 
 export async function update_card(DTO) {
- const res = await fetch('http://localhost:8000/card/update', {
+ const res = await fetch(`${env.SERVER_URL}/card/update`, {
     method: 'POST',
     body: JSON.stringify(DTO),
     headers: {

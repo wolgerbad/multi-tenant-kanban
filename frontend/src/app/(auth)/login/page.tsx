@@ -1,17 +1,15 @@
-import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { getSession } from '@/helpers/session'
-import { LoginForm } from './dynamic'
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getSession } from '@/helpers/session';
+import { LoginForm } from './dynamic';
 
 export default async function LoginPage() {
-  const session = await getSession()
-  if (session.ok)
-    redirect('/')
+  const session = await getSession();
+  if (session.ok) redirect('/');
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-10">
-        {/* Top logo */}
         <Link href="/" className="mb-10 flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 ring-1 ring-emerald-500/40">
             <span className="text-sm font-semibold text-emerald-300">KB</span>
@@ -21,7 +19,6 @@ export default async function LoginPage() {
           </span>
         </Link>
 
-        {/* Card */}
         <div className="rounded-2xl border border-slate-800/80 bg-slate-900/70 p-6 shadow-[0_18px_60px_rgba(15,23,42,0.9)]">
           <h1 className="text-xl font-semibold tracking-tight text-slate-50">
             Welcome back
@@ -33,8 +30,7 @@ export default async function LoginPage() {
           <LoginForm />
 
           <p className="mt-4 text-[11px] text-slate-400">
-            New to Flowboard?
-            {' '}
+            New to Flowboard?{' '}
             <Link
               href="/signup"
               className="text-emerald-300 hover:text-emerald-200"
@@ -49,5 +45,5 @@ export default async function LoginPage() {
         </p>
       </div>
     </main>
-  )
+  );
 }

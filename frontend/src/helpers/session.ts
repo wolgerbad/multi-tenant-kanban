@@ -18,7 +18,7 @@ export async function getSession() {
     if (!verify?.payload)
       throw new Error('Not authenticated.')
     const userId = verify?.payload.id
-    const res = await fetch(`http://localhost:8000/user/${userId}`)
+    const res = await fetch(`${env.SERVER_URL}/user/${userId}`)
     const result = await res.json()
 
     return { ok: true, data: result }

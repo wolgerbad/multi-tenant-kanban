@@ -1,17 +1,18 @@
 import type { Board } from '@/types'
+import { env } from '@/utils/envSchema'
 
 export async function get_boards_of_organization(orgId: number) {
-  const res = await fetch(`http://localhost:8000/board/organization/${orgId}`)
+  const res = await fetch(`${env.SERVER_URL}/board/organization/${orgId}`)
   return await res.json()
 }
 
 export async function get_board_by_id(boardId: number) {
-  const res = await fetch(`http://localhost:8000/board/${boardId}`)
+  const res = await fetch(`${env.SERVER_URL}/board/${boardId}`)
   return await res.json() as Board
 }
 
 export async function create_board(DTO: { board_title: string; organization_id: number }) {
-  const res = await fetch('http://localhost:8000/board/create', {
+  const res = await fetch(`${env.SERVER_URL}/board/create`, {
     method: 'POST',
     body: JSON.stringify(DTO),
     headers: {

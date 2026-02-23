@@ -19,8 +19,6 @@ export default async function Page({ params }: { params: Promise<{ organization_
 
   const boards = await get_boards_of_organization(organization_id)
 
-  console.log('boards', boards)
-
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-8 gap-8">

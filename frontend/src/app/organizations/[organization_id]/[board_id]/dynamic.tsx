@@ -8,25 +8,35 @@ import type {
   User,
 } from '@/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { differenceInDays, format, formatDistanceToNow, isBefore } from 'date-fns';
-import { LogOutIcon, TriangleAlert, UserIcon, Plus, X, Check } from 'lucide-react';
+import {
+  differenceInDays,
+  format,
+  formatDistanceToNow,
+  isBefore,
+} from 'date-fns';
+import {
+  LogOutIcon,
+  TriangleAlert,
+  UserIcon,
+  Plus,
+  X,
+  Check,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { FcInvite } from 'react-icons/fc';
 import { IoMdArrowDropdown } from 'react-icons/io';
-import { TbCalendarDue, TbOvalVerticalFilled } from 'react-icons/tb';
+import { TbCalendarDue } from 'react-icons/tb';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -49,7 +59,11 @@ import {
   switch_card_positions,
   update_card,
 } from '@/helpers/card';
-import { create_column, switch_column_positions, update_column_title } from '@/helpers/column';
+import {
+  create_column,
+  switch_column_positions,
+  update_column_title,
+} from '@/helpers/column';
 import {
   get_organization_invites_of_member,
   send_organization_invite,
@@ -63,8 +77,6 @@ import {
   DragOverlay,
   DragStartEvent,
   PointerSensor,
-  useDraggable,
-  useDroppable,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -78,15 +90,6 @@ import {
 } from '@dnd-kit/sortable';
 import { logout } from '@/app/(auth)/actions';
 import { socket } from '@/helpers/socket';
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from '@/components/ui/combobox';
-import { get_members_of_organization } from '@/helpers/organization_member';
 import { Input } from '@/components/ui/input';
 import { create_card_comment, get_card_comments } from '@/helpers/card_comment';
 import ProfilePicture from '@/components/profile_picture';
@@ -198,7 +201,7 @@ export function Columns({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        delay: 250,
+        delay: 180,
         tolerance: 5,
       },
     })
@@ -207,7 +210,7 @@ export function Columns({
   async function handle_drag_end(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
-    console.log(active, over);
+
     if (!over) return;
 
     const drag_id = +active.id.split('-')[1];
@@ -261,7 +264,7 @@ export function Columns({
       ) {
         const result = await switch_card_positions({
           dragged_card: drag_id,
-          dropped_card: drop_id
+          dropped_card: drop_id,
         });
         if (result.ok) {
           socket.emit('dragndrop_event', organization_id);
@@ -351,11 +354,14 @@ export function Column({
   active_id: string | null;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [client_column_title, set_client_column_title] = useState(() => column.title)
-  const [is_editing_title, set_is_editing_title] = useState(false)
+  const [client_column_title, set_client_column_title] = useState(
+    () => column.title
+  );
+  const [is_editing_title, set_is_editing_title] = useState(false);
   const router = useRouter();
   const [date, setDate] = useState<Date>();
   const last_position = column.cards.at(-1)?.position ?? -1;
+  const [error, setError] = useState(false)
 
   const formatted_date = date && format(date, 'yyyy-MM-dd');
 
@@ -373,8 +379,10 @@ export function Column({
   };
 
   async function handle_create_card(formData: FormData) {
+    setError(null)
     const card_title = formData.get('card_title') as string;
     const priority = formData.get('priority') as string;
+    if(!date) return setError(true)
     if (!card_title.trim().length || !priority || !date) return;
     const cardDTO = {
       title: card_title,
@@ -385,20 +393,23 @@ export function Column({
       priority,
       due_date: formatted_date,
     };
-    const result = await create_card(cardDTO);
-    if (result.ok) {
-      router.refresh();
-      socket.emit('card_created', column.org_id);
-    }
+    router.refresh();
+    socket.emit('card_created', column.org_id);
+
+
   }
 
   async function handle_update_column_title() {
-    if(!client_column_title.trim().length || client_column_title === column.title) return
-    set_is_editing_title(false)
-    const result = await update_column_title(client_column_title, column.id)
-    if(!result.ok) return;
-    socket.emit('column_updated', column.org_id)
-    router.refresh()
+    if (
+      !client_column_title.trim().length ||
+      client_column_title === column.title
+    )
+      return;
+    set_is_editing_title(false);
+    const result = await update_column_title(client_column_title, column.id);
+    if (!result.ok) return;
+    socket.emit('column_updated', column.org_id);
+    router.refresh();
   }
 
   useEffect(
@@ -410,11 +421,14 @@ export function Column({
     [router]
   );
 
-  useEffect(function() {
-    socket.on('column_update_new', () => {
-      router.refresh()
-    })
-  }, [router])
+  useEffect(
+    function () {
+      socket.on('column_update_new', () => {
+        router.refresh();
+      });
+    },
+    [router]
+  );
 
   return (
     <div
@@ -425,25 +439,44 @@ export function Column({
       {...listeners}
       className="flex h-full min-w-[280px] flex-col rounded-xl border border-slate-800 bg-slate-900/40"
     >
-      {/* Column header Draggable */}
+
       <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 cursor-all-scroll">
-        {is_editing_title && <div className='relative flex flex-col'> 
-        <input type='text' value={client_column_title} onChange={(e) => set_client_column_title(e.target.value)} onKeyDown={(e) => {
-          if(e.key === 'Enter') return handle_update_column_title()
-            return
-        }} className='py-1 h-full w-full font-semibold outline-0 border-2 border-slate-600 rounded-xs' autoFocus onBlur={() => set_is_editing_title(false)}/>
-        <div className='absolute right-0 top-1/2 -translate-y-1/2 self-end'>
-          <button onMouseDown={handle_update_column_title} className=' rounded-xs p-1 hover:bg-slate-500/60 cursor-pointer '>
-            <Check size={14} color='#90a1b9' />
-          </button>
-        </div>
-        </div>}
-        {!is_editing_title && <div onClick={() => set_is_editing_title(true)} className="py-1 hover:bg-slate-400/40 w-2/3 text-sm font-semibold text-slate-200">{column.title}</div>}
+        {is_editing_title && (
+          <div className="relative flex flex-col">
+            <input
+              type="text"
+              value={client_column_title}
+              onChange={(e) => set_client_column_title(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') return handle_update_column_title();
+                return;
+              }}
+              className="py-1 h-full w-full font-semibold outline-0 border-2 border-slate-600/60 rounded-xs"
+              autoFocus
+              onBlur={() => set_is_editing_title(false)}
+            />
+            <div className="absolute right-1 top-1/2 -translate-y-1/2 self-end">
+              <button
+                onMouseDown={handle_update_column_title}
+                className="rounded-xs p-1 hover:bg-slate-500/60 cursor-pointer "
+              >
+                <Check size={14} color="#90a1b9" />
+              </button>
+            </div>
+          </div>
+        )}
+        {!is_editing_title && (
+          <div
+            onClick={() => set_is_editing_title(true)}
+            className="py-1 hover:bg-slate-400/40 w-2/3 text-sm font-semibold text-slate-200"
+          >
+            {column.title}
+          </div>
+        )}
         <span className="text-[11px] text-slate-500 ml-2">
           {column.cards?.length} {column.cards?.length === 1 ? 'card' : 'cards'}
         </span>
       </div>
-      {/* Cards container */}
       <Cards
         cards={column.cards}
         active_id={active_id}
@@ -451,7 +484,6 @@ export function Column({
         organization_id={column.org_id}
         user_id={user_id}
       />
-      {/* Add card button */}
       <div className="border-t border-slate-800 p-3">
         {!isOpen && (
           <button
@@ -469,7 +501,7 @@ export function Column({
             <input
               type="text"
               name="card_title"
-              className="w-full mb-1 px-3 py-2 rounded-lg outline-0 bg-white "
+              className="w-full mb-1 px-3 py-2 rounded-lg outline-0 bg-white text-[12px] text-slate-700"
             />
             <div className="flex items-center">
               <select name="priority" className="text-[13px] outline-0">
@@ -486,7 +518,7 @@ export function Column({
                         {format(date, 'MMM dd')}
                       </span>
                     ) : (
-                      <span className="text-2xl hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer">
+                      <span className={`text-2xl hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer ${error ? 'border border-red-600' : ''}`}>
                         <TbCalendarDue />
                       </span>
                     )}
@@ -552,7 +584,9 @@ export function Cards({
         ))}
         {active_id && (
           <DragOverlay>
-            {active_id && active_card ? <Card card={active_card} user_id={user_id} /> : null}
+            {active_id && active_card ? (
+              <Card card={active_card} user_id={user_id} />
+            ) : null}
           </DragOverlay>
         )}
       </SortableContext>
@@ -561,7 +595,7 @@ export function Cards({
 }
 
 export function Card({ card, user_id }: { card: Card; user_id: number }) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const formatted_date = format(card.due_date, 'MMM dd');
   const today = format(new Date(), 'MMM dd');
@@ -618,140 +652,245 @@ export function Card({ card, user_id }: { card: Card; user_id: number }) {
         <div>
           {isPending ? (
             <p>loading..</p>
-          ) : <ProfilePicture user={user} className='w-6 h-6' /> }
+          ) : (
+            <ProfilePicture user={user} className="w-6 h-6" />
+          )}
         </div>
       </div>
-      <CardDetailsDropdown isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} card={card} user_id={user_id} />
+      <CardDetailsDropdown
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        card={card}
+        user_id={user_id}
+      />
     </div>
   );
 }
 
-export function CardDetailsDropdown({isOpen, onOpenChange, card, user_id}: { isOpen: boolean; onOpenChange: Dispatch<SetStateAction<boolean>>; card: Card; user_id: number }) {
-  const [client_card_title, set_client_card_title] = useState(() => card.title)
-  const [client_card_description, set_client_card_description] = useState(() => card.description ?? '')
-  const [is_editing_title, set_is_editing_title] = useState(false)
-  const [is_editing_description, set_is_editing_description] = useState(false)
-  const [error, setError] = useState<null | string>(null)
-  const queryClient = useQueryClient()
-  const router = useRouter()
+export function CardDetailsDropdown({
+  isOpen,
+  onOpenChange,
+  card,
+  user_id,
+}: {
+  isOpen: boolean;
+  onOpenChange: Dispatch<SetStateAction<boolean>>;
+  card: Card;
+  user_id: number;
+}) {
+  const [client_card_title, set_client_card_title] = useState(() => card.title);
+  const [client_card_description, set_client_card_description] = useState(
+    () => card.description ?? ''
+  );
+  const [is_editing_title, set_is_editing_title] = useState(false);
+  const [is_editing_description, set_is_editing_description] = useState(false);
+  const [error, setError] = useState<null | string>(null);
+  const queryClient = useQueryClient();
+  const router = useRouter();
 
-  const {data: user, isPending} = useQuery({ 
+  const { data: user, isPending } = useQuery({
     queryKey: ['user', user_id],
-    queryFn: async () => await get_user(user_id)
-   })
+    queryFn: async () => await get_user(user_id),
+  });
 
-   const {data: card_comments, isPending: comments_pending} = useQuery({
+  const { data: card_comments, isPending: comments_pending } = useQuery({
     queryKey: ['card_comments', card.id],
-    queryFn: async () => await get_card_comments(card.id)
-   })
+    queryFn: async () => await get_card_comments(card.id),
+  });
 
-   useEffect(function() {
-    socket.on('card_update_new', () => {
-      console.log('card_update')
-      queryClient.invalidateQueries({
-        queryKey: ['card_comments', card.id]
-      })
-    })
-   }, [router, queryClient, card.id])
+  useEffect(
+    function () {
+      socket.on('card_update_new', () => {
+        queryClient.invalidateQueries({
+          queryKey: ['card_comments', card.id],
+        });
+      });
+    },
+    [router, queryClient, card.id]
+  );
 
-   async function handle_create_card_comment(formData: FormData) {
-      setError(null)
-      const comment = formData.get('comment') as string
-      if(!comment.trim().length) return;
-      const result = await create_card_comment({ sender_id: user_id, comment, card_id: card.id, org_id: card.org_id })
-      if(!result.ok) return setError(result.error)
-      queryClient.invalidateQueries({queryKey: ['card_comments', card.id]})
-      socket.emit('card_updated', card.org_id)
-   }
+  async function handle_create_card_comment(formData: FormData) {
+    setError(null);
+    const comment = formData.get('comment') as string;
+    if (!comment.trim().length) return;
+    const result = await create_card_comment({
+      sender_id: user_id,
+      comment,
+      card_id: card.id,
+      org_id: card.org_id,
+    });
+    if (!result.ok) return setError(result.error);
+    queryClient.invalidateQueries({ queryKey: ['card_comments', card.id] });
+    socket.emit('card_updated', card.org_id);
+  }
 
-   async function handle_update_card(type: string) {
-    if(type === 'title') {
-        if(!client_card_title.trim().length || card.title === client_card_title) return;
-        const result = await update_card({ title: client_card_title, card_id: card.id })
-        set_is_editing_title(false)
-      if(result.ok) {
-        router.refresh()
-        socket.emit('card_updated', card.org_id)
-      }
+  async function handle_update_card(type: string) {
+    if (type === 'title') {
+      if (!client_card_title.trim().length || card.title === client_card_title)
         return;
+      const result = await update_card({
+        title: client_card_title,
+        card_id: card.id,
+      });
+      set_is_editing_title(false);
+      if (result.ok) {
+        router.refresh();
+        socket.emit('card_updated', card.org_id);
+      }
+      return;
     }
 
-    if(type === 'description') {
-      if(!client_card_description?.trim().length || card.description === client_card_description) return
-      const result = await update_card({ description: client_card_description, card_id: card.id })
-      if(result.ok)  {
-        router.refresh()
-        socket.emit('card_updated', card.org_id)
+    if (type === 'description') {
+      if (
+        !client_card_description?.trim().length ||
+        card.description === client_card_description
+      )
+        return;
+      const result = await update_card({
+        description: client_card_description,
+        card_id: card.id,
+      });
+      if (result.ok) {
+        router.refresh();
+        socket.emit('card_updated', card.org_id);
       }
       return;
     }
     return;
-   }
+  }
 
-
-return <Dialog open={isOpen} onOpenChange={onOpenChange} >
-    <DialogContent className="sm:max-w-lg bg-slate-800 text-white">
-      <DialogHeader className='flex flex-col'>
-        {is_editing_title && <> 
-        <input type='text' value={client_card_title} onKeyDown={(e) => {
-          if(e.key === 'Enter') return handle_update_card('title')
-          return
-        }} onChange={(e) => set_client_card_title(e.target.value) } className='h-full w-full p-2 text-lg font-semibold outline-0 border-2 border-slate-600' autoFocus onBlur={() => set_is_editing_title(false)}/>
-        <div className='self-end flex gap-2 items-center'>
-          <button className='border-2 p-2 border-slate-400 rounded-xs hover:bg-slate-500/60 cursor-pointer'>
-            <X size={18} color='#90a1b9' style={{ fontWeight: 'bold' }} />
-          </button>
-          <button onMouseDown={() => handle_update_card('title')} className='border-2 border-slate-400 p-2 rounded-xs hover:bg-slate-500/60 cursor-pointer '>
-            <Check size={18} color='#90a1b9' />
-          </button>
-        </div>
-        </>
-        }
-        {!is_editing_title && <DialogTitle onClick={() => set_is_editing_title(true)} className='h-full p-2 hover:bg-slate-400/40 transition-all ease duration-75'>{card.title}</DialogTitle>}
-      </DialogHeader>
-      <div className='p-2'>
-        <h2 className='mb-1 font-semibold'>Description</h2>
-        {is_editing_description && <div> 
-        <textarea className='w-full border rounded-xs p-4 outline-0 mb-2' value={client_card_description} onChange={(e) => set_client_card_description(e.target.value) } autoFocus onBlur={() => set_is_editing_description(false)} rows={3} placeholder='Add your description here...'/>
-        <div className='flex gap-2 items-center'>
-          <button onMouseDown={() => handle_update_card('description')} className='bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-xs font-semibold cursor-pointer'>Save</button>
-          <button className='cursor-pointer font-semibold hover:bg-slate-500/60 px-2 py-1 rounded-xs'>Cancel</button>
-        </div>
-         </div>}
-        {!is_editing_description && <div onClick={() => set_is_editing_description(true)} className='text-slate-300 hover:bg-slate-400/40 transition-all ease duration-75 py-1'>{card.description ?? 'Add a description...'}</div>}
-      </div>
-
-      <div className='p-2'>
-        <h2 className='font-semibold mb-2'>Comments</h2>
-       <form action={handle_create_card_comment}>
-          <div className='flex gap-2 '>
-            <div>{isPending ? 'loading' : <ProfilePicture user={user} className='w-8 h-8' />}</div>
-            <div className='flex-1'>
-            <textarea name='comment' className='w-full border rounded-xs px-4 py-2 outline-0 mb-1' autoFocus rows={2} placeholder='Add a comment'/>
-          <div className='flex justify-self-end gap-2 items-center'>
-            <button className='bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-xs font-semibold cursor-pointer'>Save</button>
-          </div>
-            </div>
-          </div>
-        </form> 
-      </div>
-      <div className='max-h-48 overflow-y-scroll'>
-        {card_comments?.length && card_comments.map(comment => (
-          <div key={comment.comment.id} className='p-2'>
-            <div className='flex gap-2 '>
-              <div className=''>{isPending ? 'loading' : <ProfilePicture user={comment.user} className='w-8 h-8' />}</div>
-              <div className='self-start'>
-                <h3 className='font-semibold'>{comment.user.name}</h3>
-                <p className='text-xs text-slate-300 mb-2'>{formatDistanceToNow(comment.comment.created_at)} ago</p>
-               <div className='text-slate-200'>{comment.comment.comment}</div>
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg bg-slate-800 text-white">
+        <DialogHeader className="flex flex-col">
+          {is_editing_title && (
+            <>
+              <input
+                type="text"
+                value={client_card_title}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') return handle_update_card('title');
+                  return;
+                }}
+                onChange={(e) => set_client_card_title(e.target.value)}
+                className="h-full w-full p-2 text-lg font-semibold outline-0 border-2 border-slate-600"
+                autoFocus
+                onBlur={() => set_is_editing_title(false)}
+              />
+              <div className="self-end flex gap-2 items-center">
+                <button className="border-2 p-2 border-slate-400 rounded-xs hover:bg-slate-500/60 cursor-pointer">
+                  <X size={18} color="#90a1b9" style={{ fontWeight: 'bold' }} />
+                </button>
+                <button
+                  onMouseDown={() => handle_update_card('title')}
+                  className="border-2 border-slate-400 p-2 rounded-xs hover:bg-slate-500/60 cursor-pointer "
+                >
+                  <Check size={18} color="#90a1b9" />
+                </button>
+              </div>
+            </>
+          )}
+          {!is_editing_title && (
+            <DialogTitle
+              onClick={() => set_is_editing_title(true)}
+              className="h-full p-2 hover:bg-slate-400/40 transition-all ease duration-75"
+            >
+              {card.title}
+            </DialogTitle>
+          )}
+        </DialogHeader>
+        <div className="p-2">
+          <h2 className="mb-1 font-semibold">Description</h2>
+          {is_editing_description && (
+            <div>
+              <textarea
+                className="w-full border rounded-xs p-4 outline-0 mb-2"
+                value={client_card_description}
+                onChange={(e) => set_client_card_description(e.target.value)}
+                autoFocus
+                onBlur={() => set_is_editing_description(false)}
+                rows={3}
+                placeholder="Add your description here..."
+              />
+              <div className="flex gap-2 items-center">
+                <button
+                  onMouseDown={() => handle_update_card('description')}
+                  className="bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-xs font-semibold cursor-pointer"
+                >
+                  Save
+                </button>
+                <button className="cursor-pointer font-semibold hover:bg-slate-500/60 px-2 py-1 rounded-xs">
+                  Cancel
+                </button>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </DialogContent>
-  
-</Dialog>
+          )}
+          {!is_editing_description && (
+            <div
+              onClick={() => set_is_editing_description(true)}
+              className="text-slate-300 hover:bg-slate-400/40 transition-all ease duration-75 py-1"
+            >
+              {card.description ?? 'Add a description...'}
+            </div>
+          )}
+        </div>
+
+        <div className="p-2">
+          <h2 className="font-semibold mb-2">Comments</h2>
+          <form action={handle_create_card_comment}>
+            <div className="flex gap-2 ">
+              <div>
+                {isPending ? (
+                  'loading'
+                ) : (
+                  <ProfilePicture user={user} className="w-8 h-8" />
+                )}
+              </div>
+              <div className="flex-1">
+                <textarea
+                  name="comment"
+                  className="w-full border rounded-xs px-4 py-2 outline-0 mb-1"
+                  autoFocus
+                  rows={2}
+                  placeholder="Add a comment"
+                />
+                <div className="flex justify-self-end gap-2 items-center">
+                  <button className="bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-xs font-semibold cursor-pointer">
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div className="max-h-48 overflow-y-scroll">
+          {card_comments?.length &&
+            card_comments.map((comment) => (
+              <div key={comment.comment.id} className="p-2">
+                <div className="flex gap-2 ">
+                  <div className="">
+                    {isPending ? (
+                      'loading'
+                    ) : (
+                      <ProfilePicture user={comment.user} className="w-8 h-8" />
+                    )}
+                  </div>
+                  <div className="self-start">
+                    <h3 className="font-semibold">{comment.user.name}</h3>
+                    <p className="text-xs text-slate-300 mb-2">
+                      {formatDistanceToNow(comment.comment.created_at)} ago
+                    </p>
+                    <div className="text-slate-200">
+                      {comment.comment.comment}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function MembersDropdown({
@@ -781,7 +920,6 @@ export function MembersDropdown({
   async function handle_send_invite(formData: FormData) {
     const email = formData.get('email') as string;
     const role = formData.get('role') as string;
-    console.log('role', role);
     const inviteDTO = { email, org_id: organization_id, sender_id, role };
     const result = await send_organization_invite(inviteDTO);
     if (!result.ok) return setError(result.error);
@@ -836,7 +974,7 @@ export function MembersDropdown({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Dialog open={isOpen}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-sm bg-slate-900 text-slate-300 border border-slate-600">
           {!can_send_invite && (
             <div>
@@ -912,11 +1050,11 @@ export function ProfileDropdown({ user }: { user: User }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button>
-         <ProfilePicture user={user} className='w-8 h-8 cursor-pointer' />
+          <ProfilePicture user={user} className="w-8 h-8 cursor-pointer" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-slate-900 text-slate-400 mt-1">
-        <DropdownMenuItem className='p-0'>
+        <DropdownMenuItem className="p-0">
           <Link
             href="/account/profile"
             className="flex gap-2 items-center w-full h-full p-2"
@@ -925,7 +1063,7 @@ export function ProfileDropdown({ user }: { user: User }) {
             Profile
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem className='p-0'>
+        <DropdownMenuItem className="p-0">
           <Link
             href="/account/invites"
             className="flex gap-2 items-center w-full h-full p-2"
@@ -940,7 +1078,7 @@ export function ProfileDropdown({ user }: { user: User }) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className='p-0' variant="destructive">
+        <DropdownMenuItem className="p-0" variant="destructive">
           <button
             onClick={handle_logout}
             className="w-full h-full flex items-center gap-2 cursor-pointer p-2"

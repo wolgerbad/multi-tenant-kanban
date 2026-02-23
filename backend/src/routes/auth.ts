@@ -1,9 +1,10 @@
 import express from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { auth_controller } from '../controller/auth.controller.js';
 
 export const router = express.Router();
 
-router.get('/', (req, res, next) => {
+router.get('/', (req: Request, res: Response, next: NextFunction) => {
   res.send('hi');
 });
 

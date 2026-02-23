@@ -1,29 +1,29 @@
-'use client'
+'use client';
 
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { env } from '@/utils/envSchema';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export function LoginForm() {
-  const [error, setError] = useState<null | string>(null)
-  const router = useRouter()
+  const [error, setError] = useState<null | string>(null);
+  const router = useRouter();
 
   async function loginAction(formData: FormData) {
-    setError(null)
-    const email = formData.get('email')
-    const password = formData.get('password')
+    setError(null);
+    const email = formData.get('email');
+    const password = formData.get('password');
 
-    const res = await fetch(`http://localhost:8000/auth/login`, {
+    const res = await fetch(`${env.SERVER_URL}/auth/login`, {
       method: 'POST',
       body: JSON.stringify({ email, password }),
       headers: {
         'Content-Type': 'application/json',
       },
       credentials: 'include',
-    })
-    const result = await res.json()
-    if (result.error)
-      return setError(result.error)
-    router.refresh()
+    });
+    const result = await res.json();
+    if (result.error) return setError(result.error);
+    router.refresh();
   }
 
   return (
@@ -41,15 +41,7 @@ export function LoginForm() {
       </div>
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <label className="font-medium text-slate-300">
-            Password
-          </label>
-          {/* <button
-          type="button"
-          className="text-[11px] text-slate-400 hover:text-slate-200"
-        >
-          Forgot?
-        </button> */}
+          <label className="font-medium text-slate-300">Password</label>
         </div>
         <input
           type="password"
@@ -68,5 +60,5 @@ export function LoginForm() {
         Sign in
       </button>
     </form>
-  )
+  );
 }

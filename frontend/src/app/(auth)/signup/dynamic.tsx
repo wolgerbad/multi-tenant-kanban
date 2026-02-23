@@ -1,38 +1,36 @@
-'use client'
+'use client';
 
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { env } from '@/utils/envSchema';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export function SignupForm() {
-  const [error, setError] = useState<null | string>(null)
-  const router = useRouter()
+  const [error, setError] = useState<null | string>(null);
+  const router = useRouter();
 
   async function signupAction(formData: FormData) {
-    setError(null)
-    const name = formData.get('name')
-    const email = formData.get('email')
-    const password = formData.get('password')
+    setError(null);
+    const name = formData.get('name');
+    const email = formData.get('email');
+    const password = formData.get('password');
 
-    const res = await fetch(`http://localhost:8000/auth/signup`, {
+    const res = await fetch(`${env.SERVER_URL}/auth/signup`, {
       method: 'POST',
       body: JSON.stringify({ name, email, password }),
       headers: {
         'Content-Type': 'application/json',
       },
       credentials: 'include',
-    })
-    const result = await res.json()
-    if (result.error)
-      return setError(result.error)
-    router.refresh()
+    });
+    const result = await res.json();
+    if (result.error) return setError(result.error);
+    router.refresh();
   }
 
   return (
     <form action={signupAction} className="mt-6 space-y-4">
       <div className="space-y-1.5">
-        <label className="block text-xs font-medium text-slate-300">
-          Name
-        </label>
+        <label className="block text-xs font-medium text-slate-300">Name</label>
         <input
           name="name"
           type="text"
@@ -72,5 +70,5 @@ export function SignupForm() {
         Create account
       </button>
     </form>
-  )
+  );
 }

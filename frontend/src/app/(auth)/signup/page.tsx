@@ -1,12 +1,11 @@
-import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { getSession } from '@/helpers/session'
-import { SignupForm } from './dynamic'
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getSession } from '@/helpers/session';
+import { SignupForm } from './dynamic';
 
 export default async function SignupPage() {
-  const session = await getSession()
-  if (session.ok)
-    redirect('/')
+  const session = await getSession();
+  if (session.ok) redirect('/');
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-10">
@@ -30,8 +29,7 @@ export default async function SignupPage() {
           <SignupForm />
 
           <p className="mt-4 text-[11px] text-slate-400">
-            Already using Flowboard?
-            {' '}
+            Already using Flowboard?{' '}
             <Link
               href="/login"
               className="text-emerald-300 hover:text-emerald-200"
@@ -46,5 +44,5 @@ export default async function SignupPage() {
         </p>
       </div>
     </main>
-  )
+  );
 }
