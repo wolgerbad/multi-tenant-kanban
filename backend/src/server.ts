@@ -1,4 +1,5 @@
 import express from 'express';
+import type { Request, Response } from 'express';
 import { router as auth_router } from './routes/auth.js';
 import { error_handler } from './middleware/error.js';
 import cors from 'cors';
@@ -27,5 +28,9 @@ app.use('/organization-member', organization_member_router);
 app.use('/organization-invite', organization_invite_router);
 app.use('/upload', upload_router);
 app.use(error_handler);
+
+app.get('/health', (req: Request, res: Response) => {
+    res.send('success')
+})
 
 
