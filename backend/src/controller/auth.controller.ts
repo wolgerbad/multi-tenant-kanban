@@ -13,6 +13,7 @@ async function signup(req: Request, res: Response, next: NextFunction) {
     .cookie('jwt', result.data, {
       httpOnly: true,
       secure: true,
+      sameSite: 'none'
     })
     .json({ ok: true });
 }
@@ -26,6 +27,7 @@ async function login(req: Request, res: Response, next: NextFunction) {
     .cookie('jwt', result.data, {
       httpOnly: true,
       secure: true,
+      sameSite: 'none'
     })
     .json({ ok: true });
 }
@@ -33,6 +35,7 @@ async function login(req: Request, res: Response, next: NextFunction) {
 async function logout(req: Request, res: Response, next: NextFunction) {
   res.cookie('jwt', '', {
     maxAge: 1,
+    sameSite: 'none'
   });
   res.send('success');
 }
