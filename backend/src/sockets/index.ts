@@ -92,6 +92,6 @@ io.on('connection', async (socket: Socket) => {
   });
 });
 
-server.listen(8000, () => {
+server.listen(process.env.PORT || 8000, () => {
   console.log('server running');
 });
