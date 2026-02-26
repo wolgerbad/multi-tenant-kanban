@@ -2,33 +2,33 @@
 
 import { clientEnv } from '@/utils/envSchema';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useActionState, useState } from 'react';
+import { signup } from '../actions';
 
 export function SignupForm() {
-  const [error, setError] = useState<null | string>(null);
-  const router = useRouter();
+  const [state, action, isPending] = useActionState(signup, { error: null })
 
-  async function signupAction(formData: FormData) {
-    setError(null);
-    const name = formData.get('name');
-    const email = formData.get('email');
-    const password = formData.get('password');
+  // async function signupAction(formData: FormData) {
+  //   setError(null);
+  //   const name = formData.get('name');
+  //   const email = formData.get('email');
+  //   const password = formData.get('password');
 
-    const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/signup`, {
-      method: 'POST',
-      body: JSON.stringify({ name, email, password }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-    const result = await res.json();
-    if (result.error) return setError(result.error);
-    router.refresh();
-  }
+  //   const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/signup`, {
+  //     method: 'POST',
+  //     body: JSON.stringify({ name, email, password }),
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     credentials: 'include',
+  //   });
+  //   const result = await res.json();
+  //   if (result.error) return setError(result.error);
+  //   router.refresh();
+  // }
 
   return (
-    <form action={signupAction} className="mt-6 space-y-4">
+    <form action={action} className="mt-6 space-y-4">
       <div className="space-y-1.5">
         <label className="block text-xs font-medium text-slate-300">Name</label>
         <input
@@ -61,7 +61,7 @@ export function SignupForm() {
         />
       </div>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {state.error && <p className="text-red-600 text-sm">{state.error}</p>}
 
       <button
         type="submit"

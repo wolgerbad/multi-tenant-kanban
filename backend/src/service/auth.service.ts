@@ -54,12 +54,8 @@ export async function signup(userDTO: SignupDTO) {
       position: 0,
       title: 'First column',
     });
-    const jwt = await new SignJWT({ id: user.id })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime('3 days')
-      .sign(SECRET);
-    return { ok: true, data: jwt };
+    
+    return { ok: true, data: user.id };
   } catch (error: any) {
     return { ok: false, error: error.message };
   }
@@ -67,6 +63,8 @@ export async function signup(userDTO: SignupDTO) {
 
 export async function login(userDTO: LoginDTO) {
   const { error } = login_schema.safeParse(userDTO);
+  // const parsed = error.message.json();
+  console.log(error.message)
   if (error) return { ok: false, error: error.message };
 
   const [user] = await user_repository.get_user_by_email(userDTO.email);
@@ -75,12 +73,7 @@ export async function login(userDTO: LoginDTO) {
   const isValid = await bcrypt.compare(userDTO.password, user.password);
   if (!isValid) return { ok: false, error: 'Invalid credentials.' };
 
-  const jwt = await new SignJWT({ id: user.id })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('3 days')
-    .sign(SECRET);
-  return { ok: true, data: jwt };
+  return { ok: true, data: user.id };
 }
 
 export const auth_service = { signup, login };

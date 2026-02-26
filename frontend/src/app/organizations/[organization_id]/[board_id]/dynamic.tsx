@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useOptimistic, useState } from 'react';
 import { FcInvite } from 'react-icons/fc';
 import { IoMdArrowDropdown } from 'react-icons/io';
 import { TbCalendarDue } from 'react-icons/tb';
@@ -191,6 +191,7 @@ export function Columns({
   organization_id: number;
   user_id: number;
 }) {
+  const [optimistic_columns, set_optimistic_columns] = useOptimistic(columns);
   const last_position = columns?.length ? columns.at(-1)?.position : -1;
   const [activeId, setActiveId] = useState<string | null>(null);
   const router = useRouter();
@@ -207,6 +208,7 @@ export function Columns({
     })
   );
 
+  console.log("optimistic cols", optimistic_columns)
   async function handle_drag_end(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
@@ -221,6 +223,10 @@ export function Columns({
       over.data.current?.type === 'column'
     ) {
       if (drag_id === drop_id) return;
+      const drag_column = columns.find(column => column.id === drag_id) as ColumnWithCards
+      const drop_column = columns.find(column => column.id === drop_id) as ColumnWithCards
+      console.log("columns", columns)
+      set_optimistic_columns((columns) => columns.map(column => column.id === drag_id ? {...column, position: drop_column?.position } : column.id === drop_id ? {...column, position: drag_column?.position} : column) )
       const result = await switch_column_positions({
         dragged_column: drag_id,
         dropped_column: drop_id,
@@ -311,8 +317,8 @@ export function Columns({
           items={columns?.map((column) => `column-${column.id}`)}
           strategy={horizontalListSortingStrategy}
         >
-          {columns?.length &&
-            columns.map((column: ColumnWithCards) => (
+          {optimistic_columns?.length &&
+            optimistic_columns.map((column: ColumnWithCards) => (
               <Column
                 key={column.id}
                 column={column}

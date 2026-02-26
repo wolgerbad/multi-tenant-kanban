@@ -5,6 +5,7 @@ import { LoginForm } from './dynamic';
 
 export default async function LoginPage() {
   const session = await getSession();
+  console.log("session", session)
   if (session.ok) redirect('/');
 
   return (

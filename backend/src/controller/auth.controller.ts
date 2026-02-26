@@ -8,28 +8,14 @@ async function signup(req: Request, res: Response, next: NextFunction) {
 
   const result = await auth_service.signup(userDTO);
   if (result?.error) res.status(500).json({ error: result.error });
-
-  res
-    .cookie('jwt', result.data, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none'
-    })
-    .json({ ok: true });
+  res.json({ ok: true, data: result.data });
 }
 
 async function login(req: Request, res: Response, next: NextFunction) {
   const userDTO = { ...req.body };
   const result = await auth_service.login(userDTO);
-  if (!result.ok) res.status(500).json({ error: result.error });
-
-  res
-    .cookie('jwt', result.data, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none'
-    })
-    .json({ ok: true });
+  if (!result.ok) res.status(500).json({ error: result.error }); 
+  res.json({ ok: true, data: result.data });
 }
 
 async function logout(req: Request, res: Response, next: NextFunction) {

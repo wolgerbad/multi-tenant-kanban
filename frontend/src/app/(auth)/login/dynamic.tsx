@@ -2,33 +2,36 @@
 
 import { clientEnv } from '@/utils/envSchema';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useActionState, useState } from 'react';
+import { login } from '../actions';
 
 export function LoginForm() {
-  const [error, setError] = useState<null | string>(null);
-  const router = useRouter();
+ const [state, action, isPending] = useActionState(login, { error: null })
 
-  async function loginAction(formData: FormData) {
-    setError(null);
-    const email = formData.get('email');
-    const password = formData.get('password');
+  // const [error, setError] = useState<null | string>(null);
+  // const router = useRouter();
 
-    const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/login`, {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-    const result = await res.json();
-    console.log("result of login", result)
-    if (result.error) return setError(result.error);
-    router.refresh();
-  }
+  // async function loginAction(formData: FormData) {
+  //   setError(null);
+  //   const email = formData.get('email');
+  //   const password = formData.get('password');
+
+  //   const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/login`, {
+  //     method: 'POST',
+  //     body: JSON.stringify({ email, password }),
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     credentials: 'include',
+  //   });
+  //   const result = await res.json();
+  //   console.log("result of login", result)
+  //   if (result.error) return setError(result.error);
+  //   router.refresh();
+  // }
 
   return (
-    <form action={loginAction} className="mt-6 space-y-4">
+    <form action={action} className="mt-6 space-y-4">
       <div className="space-y-1.5">
         <label className="block text-xs font-medium text-slate-300">
           Email
@@ -52,7 +55,7 @@ export function LoginForm() {
         />
       </div>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {state.error && <p className="text-red-600 text-sm">{state.error}</p>}
 
       <button
         type="submit"

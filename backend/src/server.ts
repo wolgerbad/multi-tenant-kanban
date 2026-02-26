@@ -12,10 +12,18 @@ import { router as organization_member_router } from './routes/organization_memb
 import { router as organization_invite_router } from './routes/organization_invite.js';
 import { router as upload_router } from './routes/upload.js';
 import { env } from './utils/envSchema.js';
+import cookieParser from 'cookie-parser';
+import { jwtVerify } from 'jose';
+import dotenv from "dotenv";
+import { user_repository } from './repository/user.repository.js';
+
+dotenv.config();
+const SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 export const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(cors({ origin: env.APP_URL, credentials: true }));
 
 app.use('/auth', auth_router);
@@ -30,7 +38,9 @@ app.use('/upload', upload_router);
 app.use(error_handler);
 
 app.get('/health', (req: Request, res: Response) => {
-    res.send('success')
-})
+  res.send('success');
+});
 
+// app.post('/me', async (req: Request, res: Response) => {
 
+// });
