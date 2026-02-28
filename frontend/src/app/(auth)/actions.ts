@@ -45,6 +45,7 @@ export async function login(prev: unknown, formData: FormData) {
   const email = formData.get('email');
   const password = formData.get('password');
 
+  // console.log("email pswrd", email, password)
   try {
     const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/login`, {
       method: 'POST',
@@ -56,6 +57,7 @@ export async function login(prev: unknown, formData: FormData) {
     });
 
     const result = await res.json();
+    console.log("result", result)
     if (result.error) throw new Error(result.error);
 
     const jwt = await new SignJWT({ id: result.data })

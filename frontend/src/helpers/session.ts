@@ -11,6 +11,7 @@ export async function getSession() {
       if(!jwt?.length) throw new Error('no jwt'); 
       const verify = await jwtVerify(jwt, SECRET);
       if (!verify?.payload) throw new Error('Not authenticated.');
+      console.log("verify", verify.payload)
       const userId = verify?.payload.id;
       const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/user/${userId}`);
       const user = await res.json();

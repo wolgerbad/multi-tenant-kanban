@@ -191,7 +191,7 @@ export function Columns({
   organization_id: number;
   user_id: number;
 }) {
-  const [optimistic_columns, set_optimistic_columns] = useOptimistic(columns);
+  const [optimistic_columns, set_optimistic_columns] = useState(() => columns);
   const last_position = columns?.length ? columns.at(-1)?.position : -1;
   const [activeId, setActiveId] = useState<string | null>(null);
   const router = useRouter();
@@ -208,6 +208,10 @@ export function Columns({
     })
   );
 
+  useEffect(function() {
+    set_optimistic_columns(columns);
+  }, [columns])
+
   console.log("optimistic cols", optimistic_columns)
   async function handle_drag_end(event: DragEndEvent) {
     const { active, over } = event;
@@ -217,23 +221,32 @@ export function Columns({
 
     const drag_id = +active.id.split('-')[1];
     const drop_id = +over.id.split('-')[1];
+    const drag_column = columns.find(column => column.id === drag_id) as ColumnWithCards
+    const drop_column = columns.find(column => column.id === drop_id) as ColumnWithCards
+
+    // const drag_card = await get_c
+    const drop_card = columns.find(column => column.id === drop_id) as ColumnWithCards
+
 
     if (
       active.data.current?.type === 'column' &&
       over.data.current?.type === 'column'
     ) {
       if (drag_id === drop_id) return;
-      const drag_column = columns.find(column => column.id === drag_id) as ColumnWithCards
-      const drop_column = columns.find(column => column.id === drop_id) as ColumnWithCards
       console.log("columns", columns)
-      set_optimistic_columns((columns) => columns.map(column => column.id === drag_id ? {...column, position: drop_column?.position } : column.id === drop_id ? {...column, position: drag_column?.position} : column) )
+      set_optimistic_columns((columns) => columns.map(column => column.id === drag_id ? {...column, position: drop_column?.position } : column.id === drop_id ? {...column, position: drag_column?.position} : column).sort((a, b) => a.position - b.position) )
       const result = await switch_column_positions({
         dragged_column: drag_id,
         dropped_column: drop_id,
       });
+      if(!result.ok) {
+        // rollback
+        set_optimistic_columns(columns);
+      }
       if (result.ok) {
         socket.emit('dragndrop_event', organization_id);
         router.refresh();
+        console.log("real cols", columns)
       }
     }
     if (

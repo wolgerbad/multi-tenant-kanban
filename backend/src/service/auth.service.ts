@@ -63,17 +63,19 @@ export async function signup(userDTO: SignupDTO) {
 
 export async function login(userDTO: LoginDTO) {
   const { error } = login_schema.safeParse(userDTO);
-  // const parsed = error.message.json();
-  console.log(error.message)
-  if (error) return { ok: false, error: error.message };
-
-  const [user] = await user_repository.get_user_by_email(userDTO.email);
-  if (!user) return { ok: false, error: 'Invalid credentials.' };
-
-  const isValid = await bcrypt.compare(userDTO.password, user.password);
-  if (!isValid) return { ok: false, error: 'Invalid credentials.' };
-
-  return { ok: true, data: user.id };
+  try {
+    if (error) throw new Error(error.message)
+  
+    const [user] = await user_repository.get_user_by_email(userDTO.email);
+    if (!user) throw new Error('Invalid credentials.')
+  
+    const isValid = await bcrypt.compare(userDTO.password, user.password);
+    if (!isValid) throw new Error('Invalid credentials.')
+  
+    return { ok: true, data: user.id };
+  } catch (error: any) {
+    return { ok: false, error: error.message }
+  }
 }
 
 export const auth_service = { signup, login };
