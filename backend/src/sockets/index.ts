@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { app } from '../server.js';
-import { Server, Socket } from 'socket.io';
+import { Server, Socket, ExtendedError } from 'socket.io';
 import { jwtVerify } from 'jose';
 import { env } from '../utils/envSchema.js';
 import { parseCookie } from 'cookie';
@@ -8,44 +8,53 @@ import { user_repository } from '../repository/user.repository.js';
 import { organization_member_repository } from '../repository/organization_member.repository.js';
 import { S3Client } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
-import { NextFunction } from 'express';
-
 
 dotenv.config();
 
 const SECRET = new TextEncoder().encode(env.JWT_SECRET);
 const server = createServer(app);
-const io = new Server(server, {
+
+interface SocketData {
+  user_id?: number;
+}
+
+const io = new Server<any, any, any, SocketData>(server, {
   cors: { origin: env.APP_URL, credentials: true },
 });
 
 export const client = new S3Client({
-  region: process.env.AWS_REGION,
+  region: process.env.AWS_REGION!,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
 
-io.use(async (socket: Socket, next: NextFunction) => {
-  console.log('hey, hi');
-  const cookies = socket.handshake.headers.cookie;
-  if (!cookies) return next(new Error('no cookie found.'));
+io.use(
+  async (
+    socket: Socket<any, any, any, SocketData>,
+    next: (err?: ExtendedError) => void
+  ) => {
+    console.log('hey, hi');
+    const cookies = socket.handshake.headers.cookie;
+    if (!cookies) return next(new Error('no cookie found.'));
 
-  const parsed = parseCookie(cookies);
-  const jwt = parsed?.jwt;
-  
-  if(!jwt) return next();
+    const parsed = parseCookie(cookies);
+    const jwt = parsed?.jwt;
 
-  const verify = await jwtVerify(jwt, SECRET);
-  socket.data.user_id = verify?.payload?.id;
-  next();
-});
+    if (!jwt) return next();
+
+    const verify = await jwtVerify(jwt, SECRET);
+
+    socket.data.user_id = (verify?.payload as any)?.id as number;
+    next();
+  }
+);
 
 io.on('connection', async (socket: Socket) => {
   console.log('uh');
   const user_id = socket.data.user_id;
-  if(!user_id) return;
+  if (!user_id) return;
   const [user] = await user_repository.get_user_by_id(user_id);
   socket.join(`user-${user.id}`);
   const organization_ids =
@@ -53,7 +62,9 @@ io.on('connection', async (socket: Socket) => {
       user.id
     );
 
-  organization_ids.map((org_id: number) => socket.join(`organization-${org_id}`));
+  organization_ids.map((org_id: number) =>
+    socket.join(`organization-${org_id}`)
+  );
 
   if (!user) return;
   console.log('user', user);
@@ -92,8 +103,8 @@ io.on('connection', async (socket: Socket) => {
   });
 
   socket.on('column_deleted', (organization_id: number) => {
-    socket.to(`organization-${organization_id}`).emit('column_delete_new')
-  })
+    socket.to(`organization-${organization_id}`).emit('column_delete_new');
+  });
 });
 
 server.listen(process.env.PORT || 8000, () => {
