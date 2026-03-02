@@ -66,13 +66,13 @@ export async function login(userDTO: LoginDTO) {
   try {
     if (error) throw new Error(error.message)
   
-    const [user] = await user_repository.get_user_by_email(userDTO.email);
-    if (!user) throw new Error('Invalid credentials.')
+    const user = await user_repository.get_user_by_email(userDTO.email);
+    if (!user.length) throw new Error('Invalid credentials.')
   
-    const isValid = await bcrypt.compare(userDTO.password, user.password);
+    const isValid = await bcrypt.compare(userDTO.password, user[0].password);
     if (!isValid) throw new Error('Invalid credentials.')
   
-    return { ok: true, data: user.id };
+    return { ok: true, data: user[0].id };
   } catch (error: any) {
     return { ok: false, error: error.message }
   }

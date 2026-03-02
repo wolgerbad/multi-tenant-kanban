@@ -211,8 +211,6 @@ export function Columns({
   useEffect(function() {
     set_optimistic_columns(columns);
   }, [columns])
-
-  console.log("optimistic cols", optimistic_columns)
   async function handle_drag_end(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
@@ -221,19 +219,17 @@ export function Columns({
 
     const drag_id = +active.id.split('-')[1];
     const drop_id = +over.id.split('-')[1];
-    const drag_column = columns.find(column => column.id === drag_id) as ColumnWithCards
-    const drop_column = columns.find(column => column.id === drop_id) as ColumnWithCards
+    const drag_column = columns.find(column => column.id === active.data.current?.column_id) as ColumnWithCards
+    const drop_column = columns.find(column => column.id === over.data.current?.column_id) as ColumnWithCards
 
-    // const drag_card = await get_c
-    const drop_card = columns.find(column => column.id === drop_id) as ColumnWithCards
-
+    const drag_card = drag_column.cards.find(card => card.id === drag_id);
+    const drop_card = drop_column.cards.find(card => card.id === drop_id);
 
     if (
       active.data.current?.type === 'column' &&
       over.data.current?.type === 'column'
     ) {
       if (drag_id === drop_id) return;
-      console.log("columns", columns)
       set_optimistic_columns((columns) => columns.map(column => column.id === drag_id ? {...column, position: drop_column?.position } : column.id === drop_id ? {...column, position: drag_column?.position} : column).sort((a, b) => a.position - b.position) )
       const result = await switch_column_positions({
         dragged_column: drag_id,
@@ -246,7 +242,6 @@ export function Columns({
       if (result.ok) {
         socket.emit('dragndrop_event', organization_id);
         router.refresh();
-        console.log("real cols", columns)
       }
     }
     if (
@@ -254,14 +249,17 @@ export function Columns({
       over.data.current?.type === 'card'
     ) {
       if (drag_id === over.data.current.column_id) return;
+      set_optimistic_columns(columns => columns.map(column => column.id === drag_column.id ? {...column, position: drop_column.position } : column.id === drop_column.id ? {...column, position: drag_column.position } : column ));
       const result = await switch_column_positions({
         dragged_column: drag_id,
         dropped_column: over.data.current.column_id,
       });
-      if (result.ok) {
-        socket.emit('dragndrop_event', organization_id);
-        router.refresh();
-      }
+      if(!result.ok) {
+        set_optimistic_columns(columns);
+        return;
+      }      
+      socket.emit('dragndrop_event', organization_id);
+      router.refresh();
     }
 
     if (
@@ -270,6 +268,7 @@ export function Columns({
     ) {
       if (active.data.current?.column_id === over.data.current?.column_id) {
         if (drag_id === drop_id) return;
+        set_optimistic_columns(columns => columns.map(column => column.id === active.data.current?.column_id ? { ...column, cards: column.cards.map(card => card.id === drag_id ? { ...card, position: drop_card?.position } : card.id === drop_id ? { ...card, position: card.position + 1 } : (card.position < drag_card?.position && card.position > drop_card?.position) ? { ...card, position: card.position + 1 } : card).sort((a, b) => a.position - b.position )} : column))
         const result = await switch_card_positions({
           dragged_card: drag_id,
           dropped_card: drop_id,
@@ -281,6 +280,7 @@ export function Columns({
       } else if (
         active.data.current?.column_id !== over.data.current?.column_id
       ) {
+        set_optimistic_columns(columns => columns.map(column => column.id === active.data.current?.column_id ? { ...column, cards: column.cards.filter(card => card.id !== drag_card?.id ).map(card => card.position > drag_card?.position ? { ...card, position: card.position - 1 } : card) } : column.id === over.data.current?.column_id ? { ...column, cards: [...column.cards, drag_card].map(card => card.id === drag_card.id ? { ...card, position: drop_card?.position } : card?.id === drop_card?.id ? { ...card, position: card?.position + 1 } : card?.position > drop_card?.position ? { ...card, position: card?.position + 1 } : card).sort((a,b) => a?.position - b?.position)} : column))
         const result = await switch_card_positions({
           dragged_card: drag_id,
           dropped_card: drop_id,
@@ -294,6 +294,8 @@ export function Columns({
       active.data.current?.type === 'card' &&
       over.data.current?.type === 'column'
     ) {
+
+      set_optimistic_columns(columns => columns.map(column => column.id === active.data.current?.column_id ? { ...column, cards: column.cards.filter(card => card.id !== drag_id)} : column.id === over.data.current?.column_id ? { ...column, cards: [...column.cards, drag_card].map(card => card.position === drag_card?.position ? { ...card, position: column.cards.at(-1)?.position + 1 ?? 0 } : card).sort((a,b) => a.position - b.position)} : column))
       const result = await switch_card_column({
         card_id: drag_id,
         column_id: drop_id,
@@ -327,7 +329,7 @@ export function Columns({
         sensors={sensors}
       >
         <SortableContext
-          items={columns?.map((column) => `column-${column.id}`)}
+          items={optimistic_columns?.map((column) => `column-${column.id}`)}
           strategy={horizontalListSortingStrategy}
         >
           {optimistic_columns?.length &&
@@ -379,7 +381,7 @@ export function Column({
   const [is_editing_title, set_is_editing_title] = useState(false);
   const router = useRouter();
   const [date, setDate] = useState<Date>();
-  const last_position = column.cards.at(-1)?.position ?? -1;
+  const last_position = column.cards?.at(-1)?.position ?? -1;
   const [error, setError] = useState(false)
 
   const formatted_date = date && format(date, 'yyyy-MM-dd');
@@ -389,6 +391,7 @@ export function Column({
       id: `column-${column.id}`,
       data: {
         type: 'column',
+        column_id: column.id
       },
     });
 
