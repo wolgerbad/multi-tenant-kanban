@@ -5,7 +5,7 @@ export default function Navbar({ session }) {
     <header className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 ring-1 ring-emerald-500/40">
-          <span className="text-sm font-semibold text-emerald-300">KB</span>
+          <span className="text-sm font-semibold text-emerald-300">FB</span>
         </div>
         <span className="text-sm font-medium tracking-tight text-slate-100">
           Flowboard
