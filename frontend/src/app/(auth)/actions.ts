@@ -8,9 +8,11 @@ import { cookies } from 'next/headers';
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 export async function signup(prev: unknown, formData: FormData) {
-  const name = formData.get('name');
-  const email = formData.get('email');
-  const password = formData.get('password');
+  const name = formData.get('name') as string;
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
+  if(!name.trim().length || !email || !password.length) return { error: 'Invalid values.' };
 
   try {
     const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/signup`, {
@@ -42,10 +44,11 @@ export async function signup(prev: unknown, formData: FormData) {
 
 
 export async function login(prev: unknown, formData: FormData) {
-  const email = formData.get('email');
-  const password = formData.get('password');
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
 
-  // console.log("email pswrd", email, password)
+  if(!email || !password.length) return { error: 'Invalid values.' };
+
   try {
     const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/login`, {
       method: 'POST',
@@ -57,7 +60,6 @@ export async function login(prev: unknown, formData: FormData) {
     });
 
     const result = await res.json();
-    console.log("result", result)
     if (result.error) throw new Error(result.error);
 
     const jwt = await new SignJWT({ id: result.data })

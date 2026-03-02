@@ -65,9 +65,10 @@ export function SignupForm() {
 
       <button
         type="submit"
-        className="mt-2 w-full rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-300 transition"
+        disabled={isPending}
+        className={`${isPending ? 'cursor-not-allowed bg-emerald-600' : 'bg-emerald-400 hover:bg-emerald-300 cursor-pointer' } mt-2 w-full rounded-lg px-4 py-2 text-sm font-semibold text-slate-950 transition`}
       >
-        Create account
+        {isPending ? 'Creating account..' : 'Create account'}
       </button>
     </form>
   );

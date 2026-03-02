@@ -201,7 +201,6 @@ export function Columns({
   user_id: number;
 }) {
   const [optimistic_columns, set_optimistic_columns] = useState(() => columns);
-  console.log("opt cols", optimistic_columns)
   const last_position = columns?.length ? columns.at(-1)?.position : -1;
   const [activeId, setActiveId] = useState<string | null>(null);
   const router = useRouter();
