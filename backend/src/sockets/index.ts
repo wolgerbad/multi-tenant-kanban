@@ -37,16 +37,21 @@ io.use(
   ) => {
     console.log('hey, hi');
     const cookies = socket.handshake.headers.cookie;
-    if (!cookies) return next(new Error('no cookie found.'));
+
+    if (!cookies) return next();
 
     const parsed = parseCookie(cookies);
     const jwt = parsed?.jwt;
 
     if (!jwt) return next();
 
-    const verify = await jwtVerify(jwt, SECRET);
+    try {
+      const verify = await jwtVerify(jwt, SECRET);
+      socket.data.user_id = (verify?.payload as any)?.id as number;
+    } catch (error) {
+      console.log('JWT verification failed:', error);
+    }
 
-    socket.data.user_id = (verify?.payload as any)?.id as number;
     next();
   }
 );
@@ -54,57 +59,67 @@ io.use(
 io.on('connection', async (socket: Socket) => {
   console.log('uh');
   const user_id = socket.data.user_id;
-  if (!user_id) return;
-  const [user] = await user_repository.get_user_by_id(user_id);
-  socket.join(`user-${user.id}`);
-  const organization_ids =
-    await organization_member_repository.get_organization_ids_of_member(
-      user.id
+
+  if (!user_id) {
+    console.log('Unauthenticated socket connection');
+    return;
+  }
+
+  try {
+    const [user] = await user_repository.get_user_by_id(user_id);
+    if (!user) return;
+
+    socket.join(`user-${user.id}`);
+    const organization_ids =
+      await organization_member_repository.get_organization_ids_of_member(
+        user.id
+      );
+
+    organization_ids.map((org_id: number) =>
+      socket.join(`organization-${org_id}`)
     );
 
-  organization_ids.map((org_id: number) =>
-    socket.join(`organization-${org_id}`)
-  );
+    console.log('user', user);
 
-  if (!user) return;
-  console.log('user', user);
+    socket.on('board_create', (organization_id: number) => {
+      socket.to(`organization-${organization_id}`).emit('board_new');
+    });
 
-  socket.on('board_create', (organization_id: number) => {
-    socket.to(`organization-${organization_id}`).emit('board_new');
-  });
+    socket.on('column_created', (organization_id: number) => {
+      socket.to(`organization-${organization_id}`).emit('column_new');
+    });
 
-  socket.on('column_created', (organization_id: number) => {
-    socket.to(`organization-${organization_id}`).emit('column_new');
-  });
+    socket.on('card_created', (organization_id: number) => {
+      socket.to(`organization-${organization_id}`).emit('card_new');
+    });
 
-  socket.on('card_created', (organization_id: number) => {
-    socket.to(`organization-${organization_id}`).emit('card_new');
-  });
+    socket.on('dragndrop_event', (organization_id: number) => {
+      socket.to(`organization-${organization_id}`).emit('dragndrop_new');
+    });
 
-  socket.on('dragndrop_event', (organization_id: number) => {
-    socket.to(`organization-${organization_id}`).emit('dragndrop_new');
-  });
+    socket.on('invite_send', (receiver_id: number) => {
+      socket.to(`user-${receiver_id}`).emit('invite_new');
+    });
 
-  socket.on('invite_send', (receiver_id: number) => {
-    socket.to(`user-${receiver_id}`).emit('invite_new');
-  });
+    socket.on('invite_answer', (organization_id: number) => {
+      socket.to(`organization-${organization_id}`).emit('invite_answer_new');
+    });
 
-  socket.on('invite_answer', (organization_id: number) => {
-    socket.to(`organization-${organization_id}`).emit('invite_answer_new');
-  });
+    socket.on('card_updated', (organization_id: number) => {
+      console.log('card_updated');
+      socket.to(`organization-${organization_id}`).emit('card_update_new');
+    });
 
-  socket.on('card_updated', (organization_id: number) => {
-    console.log('card_updated');
-    socket.to(`organization-${organization_id}`).emit('card_update_new');
-  });
+    socket.on('column_updated', (organization_id: number) => {
+      socket.to(`organization-${organization_id}`).emit('column_update_new');
+    });
 
-  socket.on('column_updated', (organization_id: number) => {
-    socket.to(`organization-${organization_id}`).emit('column_update_new');
-  });
-
-  socket.on('column_deleted', (organization_id: number) => {
-    socket.to(`organization-${organization_id}`).emit('column_delete_new');
-  });
+    socket.on('column_deleted', (organization_id: number) => {
+      socket.to(`organization-${organization_id}`).emit('column_delete_new');
+    });
+  } catch (error) {
+    console.error('Error in socket connection handler:', error);
+  }
 });
 
 server.listen(process.env.PORT || 8000, () => {

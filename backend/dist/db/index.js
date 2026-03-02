@@ -8,7 +8,6 @@ const connection = await mysql.createConnection({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     host: process.env.DB_HOST,
-    // turn the env var into a number; assert it exists so strict mode is happy
     port: +process.env.DB_PORT,
 });
 export const db = drizzle(connection, {
