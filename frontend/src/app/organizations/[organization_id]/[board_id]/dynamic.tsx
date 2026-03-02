@@ -2,6 +2,7 @@
 
 import type {
   Card,
+  Column,
   ColumnWithCards,
   Invite,
   OrgMemberForDropdown,
@@ -21,6 +22,9 @@ import {
   Plus,
   X,
   Check,
+  Delete,
+  Trash,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -61,6 +65,7 @@ import {
 } from '@/helpers/card';
 import {
   create_column,
+  delete_column,
   switch_column_positions,
   update_column_title,
 } from '@/helpers/column';
@@ -103,21 +108,25 @@ interface PropTypes {
 export function CreateColumn({
   board_id,
   organization_id,
-  position,
+  position
 }: PropTypes) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
-
+// console.log("opt cols", )
   async function handle_create_column(formData: FormData) {
     const column_name = formData.get('column_name') as string;
     if (!column_name.trim().length) return;
-    const result = await create_column({
+    const columnObj = {
       title: column_name,
-      board_id,
-      org_id: organization_id,
+      board_id: +board_id,
+      org_id: +organization_id,
       position,
-    });
-    if (!result.ok) return;
+    }
+
+    const result = await create_column(columnObj);
+    if (!result.ok) {
+      return;
+    };
     socket.emit('column_created', organization_id);
     router.refresh();
     setIsOpen(false);
@@ -192,6 +201,7 @@ export function Columns({
   user_id: number;
 }) {
   const [optimistic_columns, set_optimistic_columns] = useState(() => columns);
+  console.log("opt cols", optimistic_columns)
   const last_position = columns?.length ? columns.at(-1)?.position : -1;
   const [activeId, setActiveId] = useState<string | null>(null);
   const router = useRouter();
@@ -238,11 +248,10 @@ export function Columns({
       if(!result.ok) {
         // rollback
         set_optimistic_columns(columns);
+        return;
       }
-      if (result.ok) {
         socket.emit('dragndrop_event', organization_id);
-        router.refresh();
-      }
+        router.refresh()
     }
     if (
       active.data.current?.type === 'column' &&
@@ -259,7 +268,7 @@ export function Columns({
         return;
       }      
       socket.emit('dragndrop_event', organization_id);
-      router.refresh();
+      router.refresh()
     }
 
     if (
@@ -273,10 +282,12 @@ export function Columns({
           dragged_card: drag_id,
           dropped_card: drop_id,
         });
-        if (result.ok) {
-          socket.emit('dragndrop_event', organization_id);
-          router.refresh();
+        if (!result.ok) {
+          set_optimistic_columns(columns)
+          return;
         }
+        socket.emit('dragndrop_event', organization_id);
+        router.refresh();
       } else if (
         active.data.current?.column_id !== over.data.current?.column_id
       ) {
@@ -285,25 +296,29 @@ export function Columns({
           dragged_card: drag_id,
           dropped_card: drop_id,
         });
-        if (result.ok) {
-          socket.emit('dragndrop_event', organization_id);
-          router.refresh();
+        if (!result.ok) {
+          set_optimistic_columns(columns);
+          return;
         }
+        socket.emit('dragndrop_event', organization_id);
+        router.refresh()
       }
     } else if (
       active.data.current?.type === 'card' &&
       over.data.current?.type === 'column'
     ) {
-
+      if(active.data.current.column_id === over.data.current.column_id) return;
       set_optimistic_columns(columns => columns.map(column => column.id === active.data.current?.column_id ? { ...column, cards: column.cards.filter(card => card.id !== drag_id)} : column.id === over.data.current?.column_id ? { ...column, cards: [...column.cards, drag_card].map(card => card.position === drag_card?.position ? { ...card, position: column.cards.at(-1)?.position + 1 ?? 0 } : card).sort((a,b) => a.position - b.position)} : column))
       const result = await switch_card_column({
         card_id: drag_id,
         column_id: drop_id,
       });
-      if (result.ok) {
-        socket.emit('dragndrop_event', organization_id);
-        router.refresh();
+      if (!result.ok) {
+        set_optimistic_columns(columns);
+        return;
       }
+      socket.emit('dragndrop_event', organization_id);
+      router.refresh();
     }
     return;
   }
@@ -339,12 +354,14 @@ export function Columns({
                 column={column}
                 user_id={user_id}
                 active_id={activeId}
+                set_optimistic_columns={set_optimistic_columns}
               />
             ))}
           {activeId && (
             <DragOverlay>
               {activeId && active_column ? (
                 <Column
+                  columns={columns}
                   column={active_column}
                   user_id={user_id}
                   active_id={activeId}
@@ -366,13 +383,17 @@ export function Columns({
 }
 
 export function Column({
+  columns,
   column,
   user_id,
   active_id,
+  set_optimistic_columns
 }: {
+  columns: ColumnWithCards[];
   column: ColumnWithCards;
   user_id: number;
   active_id: string | null;
+  set_optimistic_columns: Dispatch<SetStateAction<ColumnWithCards[]>>
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [client_column_title, set_client_column_title] = useState(
@@ -433,6 +454,17 @@ export function Column({
     router.refresh();
   }
 
+  async function handle_delete_column() {
+    set_optimistic_columns(columns => columns.filter(c => c.id !== column.id))
+   const result = await delete_column(column.id)
+   if(!result.ok) {
+    set_optimistic_columns(columns)
+    return;
+   }
+   socket.emit('column_deleted', column.org_id)
+   router.refresh();
+  }
+
   useEffect(
     function () {
       socket.on('card_new', () => {
@@ -450,6 +482,12 @@ export function Column({
     },
     [router]
   );
+
+  useEffect(function() {
+    socket.on('column_delete_new', () => {
+      router.refresh()
+    })
+  }, [router])
 
   return (
     <div
@@ -494,9 +532,9 @@ export function Column({
             {column.title}
           </div>
         )}
-        <span className="text-[11px] text-slate-500 ml-2">
-          {column.cards?.length} {column.cards?.length === 1 ? 'card' : 'cards'}
-        </span>
+        <button onClick={handle_delete_column} className="text-slate-500 ml-2 hover:bg-slate-400/40 p-1 rounded-sm cursor-pointer">
+          <Trash2 size={20} />
+        </button>
       </div>
       <Cards
         cards={column.cards}

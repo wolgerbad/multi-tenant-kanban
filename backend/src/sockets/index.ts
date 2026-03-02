@@ -90,6 +90,10 @@ io.on('connection', async (socket: Socket) => {
   socket.on('column_updated', (organization_id: number) => {
     socket.to(`organization-${organization_id}`).emit('column_update_new');
   });
+
+  socket.on('column_deleted', (organization_id: number) => {
+    socket.to(`organization-${organization_id}`).emit('column_delete_new')
+  })
 });
 
 server.listen(process.env.PORT || 8000, () => {

@@ -21,7 +21,6 @@ const login_schema = z.object({
 });
 
 const SALT_ROUNDS = 12;
-const SECRET = new TextEncoder().encode(env.JWT_SECRET);
 
 export async function signup(userDTO: SignupDTO) {
   try {

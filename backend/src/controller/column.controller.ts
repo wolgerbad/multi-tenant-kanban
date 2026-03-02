@@ -54,9 +54,20 @@ async function update_column_title(
   }
 }
 
+async function delete_column(req: Request, res: Response, next: NextFunction) {
+  const column_id = Number(req.params.columnId);
+  try {
+    await column_service.delete_column(column_id)
+    return { ok: true }
+  } catch (error: any) {
+    return {ok: false, error: error.message}
+  }
+}
+
 export const column_controller = {
   get_columns_by_board_id,
   create_column,
   switch_column_positions,
   update_column_title,
+  delete_column
 };

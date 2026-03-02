@@ -1,5 +1,4 @@
 import { Column } from '../db/schema.js';
-import { card_repository } from '../repository/card.repository.js';
 import { column_repository } from '../repository/column.repository.js';
 
 async function get_columns_by_board_id(boardId: number) {
@@ -34,9 +33,14 @@ async function update_column_title(DTO: { column_id: number; title: string }) {
   return await column_repository.update_column_title(DTO.column_id, DTO.title);
 }
 
+async function delete_column(column_id: number) {
+   return await column_repository.delete_column(column_id)
+}
+
 export const column_service = {
   get_columns_by_board_id,
   create_column,
   switch_column_positions,
   update_column_title,
+  delete_column
 };

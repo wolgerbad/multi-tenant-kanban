@@ -40,3 +40,11 @@ export async function update_column_title(title: string, column_id: number) {
 
   return await res.json()
 }
+
+export async function delete_column(column_id: number) {
+ const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/column/${column_id}`, {
+    method: 'DELETE'
+  });
+  
+  return await res.json();
+}

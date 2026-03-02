@@ -47,10 +47,10 @@ export const organization_member = mysqlTable('organization_member', {
   id: int().primaryKey().notNull().autoincrement(),
   user_id: int()
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id, { onDelete: 'cascade' }),
   org_id: int()
     .notNull()
-    .references(() => organization.id),
+    .references(() => organization.id, { onDelete: 'cascade' }),
   role: varchar({ length: 50 }).notNull().default('member'),
   created_at: timestamp({ mode: 'string' }).defaultNow(),
 });
@@ -76,7 +76,7 @@ export const board = mysqlTable('board', {
   title: varchar({ length: 100 }).notNull(), // unq across board
   org_id: int()
     .notNull()
-    .references(() => organization.id),
+    .references(() => organization.id, { onDelete: 'cascade' }),
   created_at: timestamp({ mode: 'string' }).defaultNow(),
 });
 
@@ -96,10 +96,10 @@ export const column = mysqlTable('column', {
   position: int().notNull(),
   org_id: int()
     .notNull()
-    .references(() => organization.id),
+    .references(() => organization.id, { onDelete: 'cascade' }),
   board_id: int()
     .notNull()
-    .references(() => board.id),
+    .references(() => board.id, { onDelete: 'cascade' }),
   created_at: timestamp({ mode: 'string' }).defaultNow(),
 });
 
@@ -124,15 +124,15 @@ export const card = mysqlTable('card', {
   position: int().notNull(),
   created_by: int()
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id, { onDelete: 'cascade' }),
   due_date: timestamp({ mode: 'string' }),
   priority: varchar({ length: 50 }).notNull(),
   column_id: int()
     .notNull()
-    .references(() => column.id),
+    .references(() => column.id, { onDelete: 'cascade' }),
   org_id: int()
     .notNull()
-    .references(() => organization.id),
+    .references(() => organization.id, { onDelete: 'cascade' }),
   created_at: timestamp({ mode: 'string' }).defaultNow(),
 });
 
@@ -190,13 +190,13 @@ export const organization_invite = mysqlTable('organization_invite', {
   id: int().primaryKey().notNull().autoincrement(),
   sender_id: int()
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id, { onDelete: 'cascade' }),
   org_id: int()
     .notNull()
-    .references(() => organization.id),
+    .references(() => organization.id, { onDelete: 'cascade' }),
   receiver_id: int()
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id, { onDelete: 'cascade' }),
   created_at: timestamp({ mode: 'string' }).defaultNow(),
   status: varchar('status', { length: 20 }).notNull().default('pending'),
   role: varchar('role', { length: 20 }).notNull(),
