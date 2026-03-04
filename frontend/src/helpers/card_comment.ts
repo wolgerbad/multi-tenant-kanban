@@ -14,5 +14,6 @@ export async function create_card_comment(DTO: { sender_id: number; card_id: num
             'Content-Type': 'application/json'
         }
     })
+    
     return await res.json()
 }

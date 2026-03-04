@@ -12,7 +12,8 @@ export async function signup(prev: unknown, formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
-  if(!name.trim().length || !email || !password.length) return { error: 'Invalid values.' };
+  if (!name.trim().length || !email || !password.length)
+    return { error: 'Invalid values.', success: null };
 
   try {
     const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/signup`, {
@@ -25,29 +26,29 @@ export async function signup(prev: unknown, formData: FormData) {
     });
     const result = await res.json();
     if (result.error) throw new Error(result.error);
-    
+
     const jwt = await new SignJWT({ id: result.data })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('3 days')
       .sign(SECRET);
-  
-    (await cookies()).set('jwt', jwt)
-  
-    revalidatePath('/signup')
-  
-    return { error: null }
+
+    (await cookies()).set('jwt', jwt);
+
+    revalidatePath('/signup');
+
+    return { error: null, success: true };
   } catch (error: any) {
-    return { error: error.message }
+    return { error: error.message, success: null };
   }
 }
-
 
 export async function login(prev: unknown, formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
-  if(!email || !password.length) return { error: 'Invalid values.' };
+  if (!email || !password.length)
+    return { success: null, error: 'Invalid values.' };
 
   try {
     const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/login`, {
@@ -63,20 +64,18 @@ export async function login(prev: unknown, formData: FormData) {
     if (result.error) throw new Error(result.error);
 
     const jwt = await new SignJWT({ id: result.data })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('3 days')
-    .sign(SECRET);
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('3 days')
+      .sign(SECRET);
 
-  (await cookies()).set('jwt', jwt)
-  
-  revalidatePath('/login')
-  return { error: null }
+    (await cookies()).set('jwt', jwt);
 
+    revalidatePath('/login');
+    return { error: null, success: true };
   } catch (error: any) {
-    return { error: error.message }
+    return { error: error.message, success: null };
   }
-
 }
 
 export async function logout() {

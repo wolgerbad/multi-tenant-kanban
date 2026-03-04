@@ -82,7 +82,7 @@ export default async function BoardPage({
         {isUserAllowed && !columns?.length && (
           <div className="px-4 flex gap-4 mt-6">
             <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400 max-w-64">
-              You&apos;re not part of any boards yet. Create a new one to get
+              You&apos;re not part of any column yet. Create a new one to get
               started.
             </div>
 

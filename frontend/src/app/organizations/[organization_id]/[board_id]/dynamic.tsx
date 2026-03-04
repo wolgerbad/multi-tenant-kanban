@@ -28,7 +28,13 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Dispatch, SetStateAction, useEffect, useOptimistic, useState } from 'react';
+import {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useOptimistic,
+  useState,
+} from 'react';
 import { FcInvite } from 'react-icons/fc';
 import { IoMdArrowDropdown } from 'react-icons/io';
 import { TbCalendarDue } from 'react-icons/tb';
@@ -99,20 +105,22 @@ import { Input } from '@/components/ui/input';
 import { create_card_comment, get_card_comments } from '@/helpers/card_comment';
 import ProfilePicture from '@/components/profile_picture';
 
+
 interface PropTypes {
   board_id: number;
   organization_id: number;
   position: number;
+  optimistic_columns: ColumnWithCards[];
+  set_optimistic_columns: Dispatch<SetStateAction<ColumnWithCards[]>>;
 }
 
 export function CreateColumn({
   board_id,
   organization_id,
-  position
+  position,
 }: PropTypes) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
-// console.log("opt cols", )
   async function handle_create_column(formData: FormData) {
     const column_name = formData.get('column_name') as string;
     if (!column_name.trim().length) return;
@@ -121,15 +129,13 @@ export function CreateColumn({
       board_id: +board_id,
       org_id: +organization_id,
       position,
-    }
-
-    const result = await create_column(columnObj);
-    if (!result.ok) {
-      return;
     };
-    socket.emit('column_created', organization_id);
-    router.refresh();
-    setIsOpen(false);
+    const result = await create_column(columnObj);
+    if(result.ok) {
+      socket.emit('column_created', organization_id);
+      router.refresh();
+      setIsOpen(false);
+    }
   }
 
   useEffect(
@@ -217,9 +223,13 @@ export function Columns({
     })
   );
 
-  useEffect(function() {
-    set_optimistic_columns(columns);
-  }, [columns])
+  useEffect(
+    function () {
+      set_optimistic_columns(columns);
+    },
+    [columns]
+  );
+
   async function handle_drag_end(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
@@ -228,46 +238,68 @@ export function Columns({
 
     const drag_id = +active.id.split('-')[1];
     const drop_id = +over.id.split('-')[1];
-    const drag_column = columns.find(column => column.id === active.data.current?.column_id) as ColumnWithCards
-    const drop_column = columns.find(column => column.id === over.data.current?.column_id) as ColumnWithCards
+    const drag_column = columns.find(
+      (column) => column.id === active.data.current?.column_id
+    ) as ColumnWithCards;
+    const drop_column = columns.find(
+      (column) => column.id === over.data.current?.column_id
+    ) as ColumnWithCards;
 
-    const drag_card = drag_column.cards.find(card => card.id === drag_id);
-    const drop_card = drop_column.cards.find(card => card.id === drop_id);
+    const drag_card = drag_column.cards.find((card) => card.id === drag_id);
+    const drop_card = drop_column.cards.find((card) => card.id === drop_id);
 
     if (
       active.data.current?.type === 'column' &&
       over.data.current?.type === 'column'
     ) {
       if (drag_id === drop_id) return;
-      set_optimistic_columns((columns) => columns.map(column => column.id === drag_id ? {...column, position: drop_column?.position } : column.id === drop_id ? {...column, position: drag_column?.position} : column).sort((a, b) => a.position - b.position) )
+      set_optimistic_columns((columns) =>
+        columns
+          .map((column) =>
+            column.id === drag_id
+              ? { ...column, position: drop_column?.position }
+              : column.id === drop_id
+                ? { ...column, position: drag_column?.position }
+                : column
+          )
+          .sort((a, b) => a.position - b.position)
+      );
       const result = await switch_column_positions({
         dragged_column: drag_id,
         dropped_column: drop_id,
       });
-      if(!result.ok) {
+      if (!result.ok) {
         // rollback
         set_optimistic_columns(columns);
         return;
       }
-        socket.emit('dragndrop_event', organization_id);
-        router.refresh()
+      socket.emit('dragndrop_event', organization_id);
+      router.refresh();
     }
     if (
       active.data.current?.type === 'column' &&
       over.data.current?.type === 'card'
     ) {
       if (drag_id === over.data.current.column_id) return;
-      set_optimistic_columns(columns => columns.map(column => column.id === drag_column.id ? {...column, position: drop_column.position } : column.id === drop_column.id ? {...column, position: drag_column.position } : column ));
+      set_optimistic_columns((columns) =>
+        columns.map((column) =>
+          column.id === drag_column.id
+            ? { ...column, position: drop_column.position }
+            : column.id === drop_column.id
+              ? { ...column, position: drag_column.position }
+              : column
+        )
+      );
       const result = await switch_column_positions({
         dragged_column: drag_id,
         dropped_column: over.data.current.column_id,
       });
-      if(!result.ok) {
+      if (!result.ok) {
         set_optimistic_columns(columns);
         return;
-      }      
+      }
       socket.emit('dragndrop_event', organization_id);
-      router.refresh()
+      router.refresh();
     }
 
     if (
@@ -276,21 +308,27 @@ export function Columns({
     ) {
       if (active.data.current?.column_id === over.data.current?.column_id) {
         if (drag_id === drop_id) return;
-        set_optimistic_columns(columns => columns.map(column => column.id === active.data.current?.column_id ? { ...column, cards: column.cards.map(card => card.id === drag_id ? { ...card, position: drop_card?.position } : card.id === drop_id ? { ...card, position: card.position + 1 } : (card.position < drag_card?.position && card.position > drop_card?.position) ? { ...card, position: card.position + 1 } : card).sort((a, b) => a.position - b.position )} : column))
-        const result = await switch_card_positions({
-          dragged_card: drag_id,
-          dropped_card: drop_id,
-        });
-        if (!result.ok) {
-          set_optimistic_columns(columns)
-          return;
-        }
-        socket.emit('dragndrop_event', organization_id);
-        router.refresh();
-      } else if (
-        active.data.current?.column_id !== over.data.current?.column_id
-      ) {
-        set_optimistic_columns(columns => columns.map(column => column.id === active.data.current?.column_id ? { ...column, cards: column.cards.filter(card => card.id !== drag_card?.id ).map(card => card.position > drag_card?.position ? { ...card, position: card.position - 1 } : card) } : column.id === over.data.current?.column_id ? { ...column, cards: [...column.cards, drag_card].map(card => card.id === drag_card.id ? { ...card, position: drop_card?.position } : card?.id === drop_card?.id ? { ...card, position: card?.position + 1 } : card?.position > drop_card?.position ? { ...card, position: card?.position + 1 } : card).sort((a,b) => a?.position - b?.position)} : column))
+        set_optimistic_columns((columns) =>
+          columns.map((column) =>
+            column.id === active.data.current?.column_id
+              ? {
+                  ...column,
+                  cards: column.cards
+                    .map((card) =>
+                      card.id === drag_id
+                        ? { ...card, position: drop_card?.position }
+                        : card.id === drop_id
+                          ? { ...card, position: card.position + 1 }
+                          : card.position < drag_card?.position &&
+                              card.position > drop_card?.position
+                            ? { ...card, position: card.position + 1 }
+                            : card
+                    )
+                    .sort((a, b) => a.position - b.position),
+                }
+              : column
+          )
+        );
         const result = await switch_card_positions({
           dragged_card: drag_id,
           dropped_card: drop_id,
@@ -300,14 +338,81 @@ export function Columns({
           return;
         }
         socket.emit('dragndrop_event', organization_id);
-        router.refresh()
+        router.refresh();
+      } else if (
+        active.data.current?.column_id !== over.data.current?.column_id
+      ) {
+        set_optimistic_columns((columns) =>
+          columns.map((column) =>
+            column.id === active.data.current?.column_id
+              ? {
+                  ...column,
+                  cards: column.cards
+                    .filter((card) => card.id !== drag_card?.id)
+                    .map((card) =>
+                      card.position > drag_card?.position
+                        ? { ...card, position: card.position - 1 }
+                        : card
+                    ),
+                }
+              : column.id === over.data.current?.column_id
+                ? {
+                    ...column,
+                    cards: [...column.cards, drag_card]
+                      .map((card) =>
+                        card.id === drag_card.id
+                          ? { ...card, position: drop_card?.position }
+                          : card?.id === drop_card?.id
+                            ? { ...card, position: card?.position + 1 }
+                            : card?.position > drop_card?.position
+                              ? { ...card, position: card?.position + 1 }
+                              : card
+                      )
+                      .sort((a, b) => a?.position - b?.position),
+                  }
+                : column
+          )
+        );
+        const result = await switch_card_positions({
+          dragged_card: drag_id,
+          dropped_card: drop_id,
+        });
+        if (!result.ok) {
+          set_optimistic_columns(columns);
+          return;
+        }
+        socket.emit('dragndrop_event', organization_id);
+        router.refresh();
       }
     } else if (
       active.data.current?.type === 'card' &&
       over.data.current?.type === 'column'
     ) {
-      if(active.data.current.column_id === over.data.current.column_id) return;
-      set_optimistic_columns(columns => columns.map(column => column.id === active.data.current?.column_id ? { ...column, cards: column.cards.filter(card => card.id !== drag_id)} : column.id === over.data.current?.column_id ? { ...column, cards: [...column.cards, drag_card].map(card => card.position === drag_card?.position ? { ...card, position: column.cards.at(-1)?.position + 1 ?? 0 } : card).sort((a,b) => a.position - b.position)} : column))
+      if (active.data.current.column_id === over.data.current.column_id) return;
+      set_optimistic_columns((columns) =>
+        columns.map((column) =>
+          column.id === active.data.current?.column_id
+            ? {
+                ...column,
+                cards: column.cards.filter((card) => card.id !== drag_id),
+              }
+            : column.id === over.data.current?.column_id
+              ? {
+                  ...column,
+                  cards: [...column.cards, drag_card]
+                    .map((card) =>
+                      card.position === drag_card?.position
+                        ? {
+                            ...card,
+                            position: column.cards.at(-1)?.position + 1 ?? 0,
+                          }
+                        : card
+                    )
+                    .sort((a, b) => a.position - b.position),
+                }
+              : column
+        )
+      );
       const result = await switch_card_column({
         card_id: drag_id,
         column_id: drop_id,
@@ -372,6 +477,8 @@ export function Columns({
       </DndContext>
       <div>
         <CreateColumn
+          optimistic_columns={optimistic_columns}
+          set_optimistic_columns={set_optimistic_columns}
           board_id={board_id}
           organization_id={organization_id}
           position={last_position + 1}
@@ -386,13 +493,13 @@ export function Column({
   column,
   user_id,
   active_id,
-  set_optimistic_columns
+  set_optimistic_columns,
 }: {
   columns: ColumnWithCards[];
   column: ColumnWithCards;
   user_id: number;
   active_id: string | null;
-  set_optimistic_columns: Dispatch<SetStateAction<ColumnWithCards[]>>
+  set_optimistic_columns: Dispatch<SetStateAction<ColumnWithCards[]>>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [client_column_title, set_client_column_title] = useState(
@@ -402,7 +509,7 @@ export function Column({
   const router = useRouter();
   const [date, setDate] = useState<Date>();
   const last_position = column.cards?.at(-1)?.position ?? -1;
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<null | string>(null);
 
   const formatted_date = date && format(date, 'yyyy-MM-dd');
 
@@ -411,7 +518,7 @@ export function Column({
       id: `column-${column.id}`,
       data: {
         type: 'column',
-        column_id: column.id
+        column_id: column.id,
       },
     });
 
@@ -421,11 +528,12 @@ export function Column({
   };
 
   async function handle_create_card(formData: FormData) {
-    setError(null)
+    setError(null);
     const card_title = formData.get('card_title') as string;
     const priority = formData.get('priority') as string;
-    if(!date) return setError(true)
-    if (!card_title.trim().length || !priority || !date) return;
+    if (!card_title.trim().length) return setError('title');
+    if (!priority) return setError('priority');
+    if (!date) return setError('date');
     const cardDTO = {
       title: card_title,
       column_id: column.id,
@@ -435,9 +543,12 @@ export function Column({
       priority,
       due_date: formatted_date,
     };
-    await create_card(cardDTO)
-    router.refresh();
-    socket.emit('card_created', column.org_id);
+    const result = await create_card(cardDTO);
+    if(result.ok) {
+      router.refresh();
+      setIsOpen(false);
+      socket.emit('card_created', column.org_id);
+    }
   }
 
   async function handle_update_column_title() {
@@ -454,115 +565,123 @@ export function Column({
   }
 
   async function handle_delete_column() {
-    set_optimistic_columns(columns => columns.filter(c => c.id !== column.id))
-   const result = await delete_column(column.id)
-   if(!result.ok) {
-    set_optimistic_columns(columns)
-    return;
-   }
-   socket.emit('column_deleted', column.org_id)
-   router.refresh();
-  }
+    set_optimistic_columns((columns) =>
+        columns.filter((c) => c.id !== column.id)
+      );
+      const result = await delete_column(column.id);
+      if (!result.ok) {
+        set_optimistic_columns(columns);
+        return;
+      }
+      socket.emit('column_deleted', column.org_id);
+      router.refresh();
+    }
 
-  useEffect(
-    function () {
-      socket.on('card_new', () => {
-        router.refresh();
-      });
-    },
-    [router]
-  );
+    useEffect(
+      function () {
+        socket.on('card_new', () => {
+          router.refresh();
+        });
+      },
+      [router]
+    );
 
-  useEffect(
-    function () {
-      socket.on('column_update_new', () => {
-        router.refresh();
-      });
-    },
-    [router]
-  );
+    useEffect(
+      function () {
+        socket.on('column_update_new', () => {
+          router.refresh();
+        });
+      },
+      [router]
+    );
 
-  useEffect(function() {
-    socket.on('column_delete_new', () => {
-      router.refresh()
-    })
-  }, [router])
+    useEffect(
+      function () {
+        socket.on('column_delete_new', () => {
+          router.refresh();
+        });
+      },
+      [router]
+    );
 
-  return (
-    <div
-      ref={setNodeRef}
-      key={column.id}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="flex h-full min-w-[280px] flex-col rounded-xl border border-slate-800 bg-slate-900/40"
-    >
-
-      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 cursor-all-scroll">
-        {is_editing_title && (
-          <div className="relative flex flex-col">
-            <input
-              type="text"
-              value={client_column_title}
-              onChange={(e) => set_client_column_title(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') return handle_update_column_title();
-                return;
-              }}
-              className="py-1 h-full w-full font-semibold outline-0 border-2 border-slate-600/60 rounded-xs"
-              autoFocus
-              onBlur={() => set_is_editing_title(false)}
-            />
-            <div className="absolute right-1 top-1/2 -translate-y-1/2 self-end">
-              <button
-                onMouseDown={handle_update_column_title}
-                className="rounded-xs p-1 hover:bg-slate-500/60 cursor-pointer "
-              >
-                <Check size={14} color="#90a1b9" />
-              </button>
+    return (
+      <div
+        ref={setNodeRef}
+        key={column.id}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className="flex h-full min-w-[280px] flex-col rounded-xl border border-slate-800 bg-slate-900/40"
+      >
+        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 cursor-all-scroll">
+          {is_editing_title && (
+            <div className="relative flex flex-col">
+              <input
+                type="text"
+                value={client_column_title}
+                onChange={(e) => set_client_column_title(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') return handle_update_column_title();
+                  return;
+                }}
+                className="py-1 h-full w-full font-semibold outline-0 border-2 border-slate-600/60 rounded-xs"
+                autoFocus
+                onBlur={() => set_is_editing_title(false)}
+              />
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 self-end">
+                <button
+                  onMouseDown={handle_update_column_title}
+                  className="rounded-xs p-1 hover:bg-slate-500/60 cursor-pointer "
+                >
+                  <Check size={14} color="#90a1b9" />
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-        {!is_editing_title && (
-          <div
-            onClick={() => set_is_editing_title(true)}
-            className="py-1 hover:bg-slate-400/40 w-2/3 text-sm font-semibold text-slate-200"
-          >
-            {column.title}
-          </div>
-        )}
-        <button onClick={handle_delete_column} className="text-slate-500 ml-2 hover:bg-slate-400/40 p-1 rounded-sm cursor-pointer">
-          <Trash2 size={20} />
-        </button>
-      </div>
-      <Cards
-        cards={column.cards}
-        active_id={active_id}
-        column_id={column.id}
-        organization_id={column.org_id}
-        user_id={user_id}
-      />
-      <div className="border-t border-slate-800 p-3">
-        {!isOpen && (
+          )}
+          {!is_editing_title && (
+            <div
+              onClick={() => set_is_editing_title(true)}
+              className="py-1 hover:bg-slate-400/40 w-2/3 text-sm font-semibold text-slate-200"
+            >
+              {column.title}
+            </div>
+          )}
           <button
-            onClick={() => setIsOpen(true)}
-            className="w-full rounded-lg border border-dashed border-slate-700 px-3 py-2 text-[11px] text-slate-400 hover:border-slate-600 hover:text-slate-300 transition"
+            onClick={handle_delete_column}
+            className="text-slate-500 ml-2 hover:bg-slate-400/40 p-1 rounded-sm cursor-pointer"
           >
-            + Add card
+            <Trash2 size={20} />
           </button>
-        )}
-        {isOpen && (
-          <form
-            action={handle_create_card}
-            className="w-full text-[11px] text-slate-400"
-          >
-            <input
-              type="text"
-              name="card_title"
-              className="w-full mb-1 px-3 py-2 rounded-lg outline-0 bg-white text-[12px] text-slate-700"
-            />
+        </div>
+        <Cards
+          cards={column.cards}
+          active_id={active_id}
+          column_id={column.id}
+          organization_id={column.org_id}
+          user_id={user_id}
+        />
+        <div className="border-t border-slate-800 p-3">
+          {!isOpen && (
+            <button
+              onClick={() => setIsOpen(true)}
+              className="w-full rounded-lg border border-dashed border-slate-700 px-3 py-2 text-[11px] text-slate-400 hover:border-slate-600 hover:text-slate-300 transition"
+            >
+              + Add card
+            </button>
+          )}
+          {isOpen && (
+            <form
+              action={handle_create_card}
+              className="w-full text-[11px] text-slate-400"
+            >
+              <input
+                type="text"
+                placeholder='Enter the card title..'
+                name="card_title"
+                className={`${error === 'title' && 'border-2 border-red-600'} w-full mb-1 px-3 py-2 rounded-lg outline-0 bg-white text-[12px] text-slate-700`}
+              />
             <div className="flex items-center">
-              <select name="priority" className="text-[13px] outline-0">
+              <select name="priority" className={`${error === 'priority' && 'border-2 border-red-600'} text-[13px] outline-0`}>
                 <option value="low">Low priority</option>
                 <option value="normal">Normal priority</option>
                 <option value="urgent">Urgent priority</option>
@@ -573,10 +692,12 @@ export function Column({
                     {date ? (
                       <span className="flex hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer items-center gap-2">
                         <TbCalendarDue />
-                        {format(date, 'MMM dd')}
+                        {format(date, 'MMM dd')}  
                       </span>
                     ) : (
-                      <span className={`text-2xl hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer ${error ? 'border border-red-600' : ''}`}>
+                      <span
+                        className={`text-2xl hover:bg-slate-800 px-2 py-1 rounded-md cursor-pointer ${error === 'date' && 'border-2 border-red-600'}`}
+                      >
                         <TbCalendarDue />
                       </span>
                     )}
@@ -922,7 +1043,7 @@ export function CardDetailsDropdown({
           </form>
         </div>
         <div className="max-h-48 overflow-y-scroll">
-          {card_comments?.length &&
+          {card_comments?.length ?
             card_comments.map((comment) => (
               <div key={comment.comment.id} className="p-2">
                 <div className="flex gap-2 ">
@@ -944,7 +1065,7 @@ export function CardDetailsDropdown({
                   </div>
                 </div>
               </div>
-            ))}
+            )) : null}
         </div>
       </DialogContent>
     </Dialog>

@@ -2,11 +2,15 @@
 
 import { clientEnv } from '@/utils/envSchema';
 import { useRouter } from 'next/navigation';
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { signup } from '../actions';
+import { connectSocket } from '@/helpers/socket';
 
 export function SignupForm() {
-  const [state, action, isPending] = useActionState(signup, { error: null })
+  const [state, action, isPending] = useActionState(signup, {
+    error: null,
+    success: null,
+  });
 
   // async function signupAction(formData: FormData) {
   //   setError(null);
@@ -66,7 +70,7 @@ export function SignupForm() {
       <button
         type="submit"
         disabled={isPending}
-        className={`${isPending ? 'cursor-not-allowed bg-emerald-600' : 'bg-emerald-400 hover:bg-emerald-300 cursor-pointer' } mt-2 w-full rounded-lg px-4 py-2 text-sm font-semibold text-slate-950 transition`}
+        className={`${isPending ? 'cursor-not-allowed bg-emerald-600' : 'bg-emerald-400 hover:bg-emerald-300 cursor-pointer'} mt-2 w-full rounded-lg px-4 py-2 text-sm font-semibold text-slate-950 transition`}
       >
         {isPending ? 'Creating account..' : 'Create account'}
       </button>

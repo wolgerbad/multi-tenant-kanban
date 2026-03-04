@@ -4,6 +4,7 @@ import ReactQueryProvider from '@/components/react_query_provider';
 import './globals.css';
 import { Toaster } from 'sonner';
 import SocketProvider from '@/components/socket_provider';
+import { getSession } from '@/helpers/session';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -20,17 +21,18 @@ export const metadata: Metadata = {
   description: 'Your favorite kanban board app.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSession()
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SocketProvider>
+        <SocketProvider isValidated={session.ok}>
           <ReactQueryProvider>{children}</ReactQueryProvider>
           <Toaster />
         </SocketProvider>

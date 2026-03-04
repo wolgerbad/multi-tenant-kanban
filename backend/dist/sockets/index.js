@@ -24,7 +24,6 @@ export const client = new S3Client({
 io.use(async (socket, next) => {
     console.log('hey, hi');
     const cookies = socket.handshake.headers.cookie;
-    // Allow connection even without cookies; JWT extraction is optional
     if (!cookies)
         return next();
     const parsed = parseCookie(cookies);
@@ -36,7 +35,6 @@ io.use(async (socket, next) => {
         socket.data.user_id = verify?.payload?.id;
     }
     catch (error) {
-        // Invalid JWT is allowed; connection proceeds as unauthenticated
         console.log('JWT verification failed:', error);
     }
     next();
@@ -44,7 +42,6 @@ io.use(async (socket, next) => {
 io.on('connection', async (socket) => {
     console.log('uh');
     const user_id = socket.data.user_id;
-    // Allow connection even if unauthenticated, but only authenticated users get joined to rooms
     if (!user_id) {
         console.log('Unauthenticated socket connection');
         return;
