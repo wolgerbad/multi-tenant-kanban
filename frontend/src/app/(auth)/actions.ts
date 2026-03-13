@@ -15,7 +15,6 @@ export async function signup(prev: unknown, formData: FormData) {
   if (!name.trim().length || !email || !password.length)
     return { error: 'Invalid values.', success: null };
 
-  try {
     const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/signup`, {
       method: 'POST',
       body: JSON.stringify({ name, email, password }),
@@ -25,7 +24,7 @@ export async function signup(prev: unknown, formData: FormData) {
       credentials: 'include',
     });
     const result = await res.json();
-    if (result.error) throw new Error(result.error);
+    if (result?.error) return { error: result.error, success: null };
 
     const jwt = await new SignJWT({ id: result.data })
       .setProtectedHeader({ alg: 'HS256' })
@@ -38,9 +37,6 @@ export async function signup(prev: unknown, formData: FormData) {
     revalidatePath('/signup');
 
     return { error: null, success: true };
-  } catch (error: any) {
-    return { error: error.message, success: null };
-  }
 }
 
 export async function login(prev: unknown, formData: FormData) {
@@ -50,7 +46,6 @@ export async function login(prev: unknown, formData: FormData) {
   if (!email || !password.length)
     return { success: null, error: 'Invalid values.' };
 
-  try {
     const res = await fetch(`${clientEnv.NEXT_PUBLIC_SERVER_URL}/auth/login`, {
       method: 'POST',
       body: JSON.stringify({ email, password }),
@@ -61,7 +56,7 @@ export async function login(prev: unknown, formData: FormData) {
     });
 
     const result = await res.json();
-    if (result.error) throw new Error(result.error);
+    if (result?.error) return { error: result.error, success: null };
 
     const jwt = await new SignJWT({ id: result.data })
       .setProtectedHeader({ alg: 'HS256' })
@@ -73,9 +68,6 @@ export async function login(prev: unknown, formData: FormData) {
 
     revalidatePath('/login');
     return { error: null, success: true };
-  } catch (error: any) {
-    return { error: error.message, success: null };
-  }
 }
 
 export async function logout() {
