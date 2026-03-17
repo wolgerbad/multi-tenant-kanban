@@ -22,7 +22,6 @@ export default async function Page({ params }: { params: Promise<{ organization_
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-8 gap-8">
-        {/* Top navbar */}
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link className='flex gap-2 items-center' href='/organizations'>
@@ -39,7 +38,6 @@ export default async function Page({ params }: { params: Promise<{ organization_
           <ProfileDropdown user={session.data} />
         </header>
 
-        {/* Content */}
         {!isUserAllowed ? (
           <div className="flex flex-col gap-2 items-center">
             <h1 className="text-xl font-semibold tracking-tight">Organization not found.</h1>
