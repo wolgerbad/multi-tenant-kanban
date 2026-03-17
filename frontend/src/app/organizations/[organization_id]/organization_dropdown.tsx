@@ -20,7 +20,7 @@ export function OrganizationsDropdown({
   organizations: Organization[];
   organization_id: number | null;
 }) {
-  if(!organizations) return;
+  console.log("organizations", organizations)
   const selected_organization = organizations?.find(
     (org) => org.id === organization_id
   );
