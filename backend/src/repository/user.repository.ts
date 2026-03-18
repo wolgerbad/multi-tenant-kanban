@@ -4,7 +4,12 @@ import { users } from '../db/schema.js';
 import { SignupDTO } from '../types.js';
 
 async function get_user_by_email(email: string) {
-  return await db.select().from(users).where(eq(users.email, email));
+    try {
+    const result = await db.select().from(users).where(eq(users.email, email));
+    return { data: result, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
 }
 
 async function get_user_by_id(userId: number) {

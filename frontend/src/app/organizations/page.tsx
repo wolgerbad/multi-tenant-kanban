@@ -17,6 +17,7 @@ export default async function Page({
   const session = await getSession();
   if (!session.ok) redirect('/');
 
+
   const organizations = await get_organizations_of_member(session.data.id);
   const boards = await get_boards_of_organization(organization_id);
 

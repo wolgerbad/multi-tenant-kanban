@@ -25,6 +25,7 @@ export async function signup(prev: unknown, formData: FormData) {
     });
     const result = await res.json();
     if (result?.error) return { error: result.error, success: null };
+    console.log("result", result)
 
     const jwt = await new SignJWT({ id: result.data })
       .setProtectedHeader({ alg: 'HS256' })
@@ -57,6 +58,7 @@ export async function login(prev: unknown, formData: FormData) {
 
     const result = await res.json();
     if (result?.error) return { error: result.error, success: null };
+    if (result?.message) return { error: result.message, success: null };
 
     const jwt = await new SignJWT({ id: result.data })
       .setProtectedHeader({ alg: 'HS256' })

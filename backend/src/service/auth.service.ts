@@ -27,7 +27,7 @@ export async function signup(userDTO: SignupDTO) {
     if (error) return { ok: false, error: error.message };
 
     const userExists = await user_repository.get_user_by_email(userDTO.email);
-    if (userExists?.length) return { ok: false, error: 'User already exists.' };
+    if(userExists.data?.length) return { ok: false, error: 'User already exists.' };
     const hashedPassword = await bcrypt.hash(userDTO.password, SALT_ROUNDS);
 
     const [user] = await user_repository.add_user({
@@ -65,7 +65,7 @@ export async function login(userDTO: LoginDTO) {
     if (error) return { ok:false, error: error.message }
   
     const user = await user_repository.get_user_by_email(userDTO.email);
-    if (!user.length) return { ok:false, error: 'Invalid credentials.' }
+    if (!user?.length) return { ok:false, error: 'Invalid credentials.' }
   
     const isValid = await bcrypt.compare(userDTO.password, user[0].password);
     if (!isValid) return { ok:false, error: 'Invalid credentials.' }

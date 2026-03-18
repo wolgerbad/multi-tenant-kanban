@@ -16,6 +16,7 @@ import cookieParser from 'cookie-parser';
 import { jwtVerify } from 'jose';
 import dotenv from "dotenv";
 import { user_repository } from './repository/user.repository.js';
+import { db } from './db/index.js';
 
 dotenv.config();
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -35,10 +36,20 @@ app.use('/card', card_router);
 app.use('/organization-member', organization_member_router);
 app.use('/organization-invite', organization_invite_router);
 app.use('/upload', upload_router);
-app.use(error_handler);
+// app.use(error_handler);  
 
 app.get('/health', (req: Request, res: Response) => {
   res.send('success');
+});
+
+app.get('/health/db', async (req, res) => {
+  try {
+    await db.execute('SELECT 1');
+    res.json({ status: 'ok' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: 'db_failed' });
+  }
 });
 
 // app.post('/me', async (req: Request, res: Response) => {
